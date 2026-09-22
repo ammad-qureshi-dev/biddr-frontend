@@ -6,6 +6,62 @@ This document describes the user-facing features of the bidding application, der
 
 ---
 
+## Standard API Response Envelope
+
+Every service (identity/auth, catalog, bidding, notification) wraps **every** HTTP response — success or failure — in the same envelope shape. The frontend's API client should have exactly **one** response-unwrapping layer built around this shape rather than per-endpoint parsing.
+
+```ts
+interface ApiResponse<T> {
+  data: T | null;
+  completedAt: string; // ISO-8601 timestamp, e.g. "2026-08-08T14:32:01.123"
+  requestId: string; // UUID, unique per request — useful for support/debugging correlation
+  messages: ApiMessage[]; // always an array, never null; empty on a plain success
+}
+
+interface ApiMessage {
+  type: "WARNING" | "INFO" | "ERROR";
+  content: string; // human-readable message text
+}
+```
+
+- **`data`** — the actual payload for the endpoint (e.g. a `UUID` for a create action, a summary object, a list of summaries). On error responses, `data` is `null`.
+- **`completedAt`** — server timestamp of when the response was produced. Not the same as any domain timestamp (e.g. bid `placedAt`) — purely a response-envelope metadata field.
+- **`requestId`** — a fresh UUID generated per response. Worth logging/surfacing in error toasts or a "copy request ID" affordance for support/debugging.
+- **`messages`** — a list of zero or more `ApiMessage` entries. On a clean success this is typically empty. On errors, it will contain at least one message (see below). The frontend should be prepared to render **multiple** messages (e.g. stacked toasts) even though today's handlers only emit one.
+
+### Error handling contract
+
+There is **no separate error response shape** — failures are still an `ApiResponse` with `data: null` and one or more `messages` explaining what went wrong. The frontend should branch on **HTTP status code** to decide how to treat the response, then read `messages[0].content` (or all of them) for user-facing text:
+
+| HTTP Status                 | When it happens                                                                                    | `ApiMessage.type` |
+| --------------------------- | -------------------------------------------------------------------------------------------------- | ----------------- |
+| `400 Bad Request`           | A business-rule/validation failure (e.g. bid too low, invalid auction timing, user already exists) | `WARNING`         |
+| `401 Unauthorized`          | Bad login credentials                                                                              | `ERROR`           |
+| `403 Forbidden`             | Illegal access — e.g. an expired or invalid password-reset/verification token                      | `ERROR`           |
+| `404 Not Found`             | Requested resource doesn't exist (e.g. unknown auction/bid/item ID)                                | `WARNING`         |
+| `500 Internal Server Error` | Unhandled/unexpected exception                                                                     | `ERROR`           |
+
+Practical guidance for the frontend:
+
+- Treat `WARNING`-type messages (400/404) as recoverable, user-correctable issues — show inline form errors or a toast, don't treat as a crash.
+- Treat `ERROR`-type messages (401/403/500) as harder failures — for 401, redirect to login; for 403 on a token flow, show "link expired/invalid, please request a new one"; for 500, show a generic "something went wrong" state.
+- Because the error text in `messages[].content` is often the raw exception message (not a stable error code), don't pattern-match on exact strings for critical logic — use the HTTP status as the primary signal and the message purely for display.
+- Successful responses can still carry `messages` (e.g. an `INFO` note) alongside real `data` — always render `messages` if present, even on the happy path, rather than only checking them when `data` is null.
+- One inconsistency to be aware of: catalog-service (auction/item endpoints) currently mirrors this exact shape via its own local copy of the DTOs rather than the shared one the other services use — the JSON on the wire is identical, so the frontend client does not need to special-case it.
+
+---
+
+## Request Identity Header (`X-App-User-Id`)
+
+**Important, cross-cutting contract:** any backend request whose handling depends on "who is the current user" — i.e. any endpoint marked `auth: true` in the frontend client, across **all four services** (identity/auth, catalog, bidding, notification) — expects an **`X-App-User-Id`** header carrying that user's ID, in addition to whatever session/JWT credential is sent.
+
+- The user ID for this header is derived from the caller's auth token (the backend does not re-derive identity purely from the header — it's sent alongside the token, not instead of it).
+- The frontend API client (`app/lib/api.ts`) already implements this: `getUserId()` reads the session's stored user ID and the shared `request()` helper attaches it as `X-App-User-Id` on every call where it's available, and rejects with a `401` client-side before sending if a call marked `auth: true` has no user ID to attach.
+- Any **new** endpoint or service call that depends on the current user (fetching "my" data, mutating a user-owned resource, anything gated on ownership) must go through this same path so the header is populated — don't hand-roll a `fetch` that skips it.
+- Because this applies uniformly across services, treat it as a base transport concern (like the response envelope above), not something to reason about per-endpoint.
+
+---
+
 ## App User / Account
 
 ### Registration & Login
@@ -28,12 +84,14 @@ This document describes the user-facing features of the bidding application, der
 - The verification link contains a token; submitting that token via the **verify account** action marks the account as verified.
 - A verification link is time-limited; using an expired link shows a "link expired" error and the user must request a new one.
 - A **confirmation notification** is sent once the account is successfully verified.
+- A logged-in user can **check whether their account is verified** (`GET /auth/account-verification/is-verified`, identity service). The frontend surfaces this on the Account page: a badge next to the "Account" eyebrow (a green checkmark, tooltip "Account is verified", when verified; a "Not Verified" pill, tooltip "Account is not verified, please verify", when not) and hides the "Verify your account" panel entirely once the account is verified, since it's no longer actionable.
 
 ### Password Management
 
-- A logged-in user can request a **password reset link** be sent to one of their contact methods (email or phone).
+- Any visitor — signed in or not — can request a **password reset link** by submitting the raw email address or phone number on the account (`POST /auth/password/reset/send-link`, body `{ contact }`; the backend looks the account up by that value rather than a session). This powers a proper "forgot password" flow from the sign-in page for someone who is locked out and never authenticated. A logged-in user can also trigger it from the Account page by picking Email/Phone, which resolves to that contact's stored value.
+- The response never confirms or denies whether the contact matched an account (the frontend treats a "not found" the same as a successful send) — this flow must not become a way to enumerate registered emails/phone numbers.
 - Like verification links, only one active reset request can exist at a time; requesting again while one is pending won't issue a second link.
-- The reset link contains a token; the user submits the token along with their **new password** to complete the reset.
+- The reset link contains a token; the user submits the token along with their **new password** to complete the reset. The token identifies the account on its own — the reset screen must **not** ask the user to re-enter their email/phone (irrelevant to the flow and an unnecessary way to surface/collect an identifier on a page reached from a link).
 - Reset tokens are time-limited; expired tokens show a "link expired" message.
 - After a successful password reset, a **confirmation notification** is sent to the user's preferred contact method.
 
@@ -55,13 +113,16 @@ This document describes the user-facing features of the bidding application, der
   - A start time and an end time
   - One or more **items** to be auctioned (an auction cannot be created with zero items)
   - One or more **categories** describing the auction, chosen from: Electronics, Vehicles, Real Estate, Art & Collectibles, Jewellery & Watches, Fashion & Accessories, Furniture & Home, Sports & Outdoors, Books & Media, Toys & Games, Industrial & Machinery, Antiques, Other
-- Auction start/end time validation: the start time must be before the end time, unless both start and end are already in the past (which allows backdating/importing historical auctions); the UI should validate this before submit and surface a clear "invalid auction timing" error otherwise.
+- Auction start/end time validation: the start time must be before the end time, unless both start and end are already in the past (which allows backdating/importing historical auctions); the UI should validate this before submit and surface a clear "invalid auction timing" error otherwise. (TODO: catalog-service now rejects any past start/end time, so the backdating allowance is slated for removal — kept in the FE for now.)
+- Auction start and end times must fall on a **15-minute mark** (minutes of :00, :15, :30 or :45, with zero seconds) — the catalog service rejects any other value. The create/edit form steps the datetime pickers in 15-minute increments, snaps a typed-in value to the nearest quarter hour on blur, and blocks submit with an inline error if the time isn't on a 15-minute mark.
 - The creator of the auction becomes its **owner**.
 - The owner (or an admin flow) can **edit an auction**: update its title, start time, end time, and categories, and **add new items** to it.
 - The owner can **change the auction's status** between:
-  - **Open** — actively accepting bids
+  - **Live** — actively accepting bids (formerly called "Open" — the API and frontend both use `LIVE` now)
   - **Paused** — temporarily not accepting activity
   - **Closed** — auction has ended, no further bidding
+- Status transitions are one-way once **Closed**: the backend rejects any attempt to move a closed auction back to Live or Paused ("Auction is CLOSED, cannot perform update"), and a Live/Paused auction whose end time has already passed can't be moved to Live either ("Auction window has closed"). The frontend hides the status-changer entirely once an auction is closed, and confirms before closing since it's irreversible.
+- **Closing an auction** (`PUT /auction/{auctionId}/status/CLOSED`) is a consequential, one-way action: the backend finalizes the highest bid on every item in the auction and sends each winning bidder a "bid accepted" notification as part of the same request. The frontend should treat clicking "Closed" like a bid confirmation — a deliberate second step, not a bare status toggle.
 - A user can view **"My Auctions"** — a list of all auctions they created, shown as summaries (title, status, categories, item count, start/end time).
 
 ### Browsing & Searching Auctions
@@ -70,7 +131,7 @@ This document describes the user-facing features of the bidding application, der
 - Any user can **view the items within a given auction**.
 - Any user can **search/browse auctions** using any combination of filters:
   - Title keyword search
-  - Status (Open / Paused / Closed)
+  - Status (Live / Paused / Closed)
   - Starting after a given date/time
   - Ending before a given date/time
 - Search results are returned as summaries suitable for a list/grid view (title, status, categories, item count, start/end time).

@@ -1,5 +1,5 @@
-@AGENTS.md
-@UI_FEATURES.md
-@APP_FEATURE.md
-@FEATURE_REQUESTS.md
-@BUGS.md
+@skills/AGENTS.md
+@skills/UI_FEATURES.md
+@skills/APP_FEATURE.md
+@skills/FEATURE_REQUESTS.md
+@skills/BUGS.md

@@ -12,7 +12,7 @@ Bidder is a live-bidding auction platform (general goods, cars, real estate). Th
 
 **Direction: "Auction House Ledger."** Think the paddle-and-podium physicality of a real auction house crossed with a departure board. A composed, ink-and-paper base (this is a place where large sums of money change hands — it should feel trustworthy, not gamified), with bid amounts and countdowns rendered in a mechanical, tabular ticker style that snaps and flips rather than fades. Status is color-coded like a scoreboard: winning, outbid, reserve not met, sold.
 
-Avoid: casino/game-show energy (no neon, no confetti-colored gradients), and avoid generic SaaS-dashboard blandness (no default indigo-on-white card grid). The product should feel closer to Sotheby's-meets-Bloomberg-terminal than to a generic marketplace template.
+Reference SAAS dashboards or even cloud consoles. This application should be simple to use and not so many distractions or unneeded texts.
 
 ---
 

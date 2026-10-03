@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { UserPlus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { Input } from "../components/ui/Input";
@@ -82,7 +83,7 @@ export default function RegisterPage() {
           required
         />
         {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" icon={UserPlus} disabled={submitting}>
           {submitting ? "Creating account…" : "Create account"}
         </Button>
       </form>

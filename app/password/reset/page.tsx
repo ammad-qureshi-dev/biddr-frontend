@@ -3,6 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Send, KeyRound, LogIn } from "lucide-react";
 import { authApi, ApiError } from "@/lib/api";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
@@ -45,7 +46,7 @@ function RequestLinkForm() {
         required
       />
       {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-      <Button type="submit" disabled={submitting}>
+      <Button type="submit" icon={Send} disabled={submitting}>
         {submitting ? "Sending…" : "Send reset link"}
       </Button>
     </form>
@@ -77,7 +78,7 @@ function SetNewPasswordForm({ token }: { token: string }) {
       <div className="mt-8 flex flex-col gap-3">
         <p className="font-sans text-sm text-ledger-green">Your password was updated.</p>
         <Link href="/login">
-          <Button>Sign in</Button>
+          <Button icon={LogIn}>Sign in</Button>
         </Link>
       </div>
     );
@@ -95,7 +96,7 @@ function SetNewPasswordForm({ token }: { token: string }) {
         required
       />
       {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-      <Button type="submit" disabled={submitting}>
+      <Button type="submit" icon={KeyRound} disabled={submitting}>
         {submitting ? "Updating…" : "Set new password"}
       </Button>
     </form>

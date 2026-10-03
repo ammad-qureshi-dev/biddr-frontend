@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { bidApi, itemApi } from "@/lib/api";
 import type { BidStatus, BidSummaryResponse, ItemResponse } from "@/lib/types";
@@ -76,6 +77,7 @@ export default function MyBidsPage() {
             body="Browse live auctions and place your first bid."
             actionLabel="Browse auctions"
             actionHref="/"
+            actionIcon={Search}
           />
         ) : (
           <div className="flex flex-col gap-2">
@@ -83,7 +85,7 @@ export default function MyBidsPage() {
               const item = items[bid.itemId];
               const auctionId = getAuctionForItem(bid.itemId);
               const row = (
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-paper-100 p-4">
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-paper-100 p-4">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-sans font-medium text-ink-950">
                       {item?.title ?? "Item"}

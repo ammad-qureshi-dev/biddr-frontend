@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { User, RefreshCw } from "lucide-react";
 import { authApi, ApiError } from "@/lib/api";
 import { Button } from "../components/ui/Button";
 
@@ -40,7 +41,7 @@ function VerifyAccountContent() {
             You&apos;re all set. Head back to your account.
           </p>
           <Link href="/account" className="mt-6">
-            <Button>Go to account</Button>
+            <Button icon={User}>Go to account</Button>
           </Link>
         </>
       )}
@@ -51,7 +52,7 @@ function VerifyAccountContent() {
           </h1>
           <p className="mt-2 font-sans text-sm text-slate-500">{error}</p>
           <Link href="/account" className="mt-6">
-            <Button variant="secondary">Request a new link</Button>
+            <Button variant="secondary" icon={RefreshCw}>Request a new link</Button>
           </Link>
         </>
       )}

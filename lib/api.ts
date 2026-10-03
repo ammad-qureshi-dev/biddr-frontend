@@ -11,6 +11,7 @@ import type {
   ItemSummaryResponse,
   NotificationResponse,
   NotificationStatus,
+  PageResponse,
   PreferredContactMethod,
 } from "./types";
 
@@ -167,23 +168,34 @@ export const auctionApi = {
   getItems: (auctionId: string) =>
     get<ItemSummaryResponse[]>(`/catalog/api/v1/auction/${auctionId}/items`),
 
-  getMyAuctions: () =>
-    get<AuctionSummaryResponse[]>("/catalog/api/v1/auction/my-auctions"),
+  getMyAuctions: (params: { page: number; size: number }) => {
+    const qs = new URLSearchParams({
+      page: String(params.page),
+      size: String(params.size),
+    });
+    return get<PageResponse<AuctionSummaryResponse>>(
+      `/catalog/api/v1/auction/my-auctions?${qs.toString()}`,
+    );
+  },
 
   search: (params: {
     title?: string;
     status?: AuctionStatus;
     startAfter?: string;
     endBefore?: string;
+    page: number;
+    size: number;
   }) => {
-    const qs = new URLSearchParams();
+    const qs = new URLSearchParams({
+      page: String(params.page),
+      size: String(params.size),
+    });
     if (params.title) qs.set("title", params.title);
     if (params.status) qs.set("status", params.status);
     if (params.startAfter) qs.set("startAfter", params.startAfter);
     if (params.endBefore) qs.set("endBefore", params.endBefore);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return get<AuctionSummaryResponse[]>(
-      `/catalog/api/v1/auction/search${suffix}`,
+    return get<PageResponse<AuctionSummaryResponse>>(
+      `/catalog/api/v1/auction/search?${qs.toString()}`,
     );
   },
 };
@@ -230,17 +242,22 @@ export const bidApi = {
   getMyBids: () =>
     get<BidSummaryResponse[]>("/bidding/api/v1/bid/search/my-bids"),
 
-  getForItem: (itemId: string) =>
-    get<BidSummaryResponse[]>(`/bidding/api/v1/bid/search/item/${itemId}`),
+  /** Top 10 bids for the item, ranked by amount (descending) — not the full history. */
+  getTopTenForItem: (itemId: string) =>
+    get<BidSummaryResponse[]>(`/bidding/api/v1/bid/item/${itemId}/top-ten-bids`),
 };
 
 // -- notification -----------------------------------------------------------
 
 export const notificationApi = {
-  getHistory: (recipientId: string, contactType?: ContactType) => {
-    const suffix = contactType ? `?contactType=${contactType}` : "";
-    return get<NotificationResponse[]>(
-      `/notification/api/v1/notification/recipient/${recipientId}${suffix}`,
+  getHistory: (params: { contactType?: ContactType; page: number; size: number }) => {
+    const qs = new URLSearchParams({
+      page: String(params.page),
+      size: String(params.size),
+    });
+    if (params.contactType) qs.set("contactType", params.contactType);
+    return get<PageResponse<NotificationResponse>>(
+      `/notification/api/v1/notification/inbox?${qs.toString()}`,
     );
   },
 

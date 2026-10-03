@@ -31,7 +31,7 @@ export function DateTimeField({
           if (!e.target.value) return;
           onChange(snapToQuarterHour(new Date(e.target.value)));
         }}
-        className="tabular-ticker min-h-11 rounded-lg border border-slate-200 bg-paper-100 px-3.5 text-sm text-ink-950 outline-none focus:border-2 focus:border-brass-500"
+        className="tabular-ticker min-h-12 rounded-xl border border-slate-200 bg-paper-50 px-3.5 text-sm text-ink-950 outline-none focus:border-2 focus:border-ink-950"
       />
       <span className="font-sans text-xs text-slate-500">15-minute increments only.</span>
       {error && <span className="font-sans text-xs text-ledger-red">{error}</span>}

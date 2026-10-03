@@ -1,10 +1,10 @@
 type PillTone = "green" | "red" | "slate" | "ink" | "red-outline";
 
 const toneClass: Record<PillTone, string> = {
-  green: "bg-ledger-green text-white",
-  red: "bg-ledger-red text-white",
-  slate: "bg-slate-500 text-white",
-  ink: "bg-ink-950 text-brass-500",
+  green: "bg-ledger-green text-neutral-900",
+  red: "bg-ledger-red text-neutral-900",
+  slate: "bg-slate-500 text-neutral-900",
+  ink: "bg-ink-950 text-neutral-900",
   "red-outline": "bg-transparent border border-ledger-red text-ledger-red",
 };
 

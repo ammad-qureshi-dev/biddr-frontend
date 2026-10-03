@@ -30,7 +30,7 @@ function FieldChrome({
 }
 
 const fieldClass =
-  "bg-paper-100 border border-slate-200 rounded-lg px-3.5 min-h-11 font-sans text-sm text-ink-950 outline-none focus:border-2 focus:border-brass-500 focus:px-[13px]";
+  "bg-paper-50 border border-slate-200 rounded-xl px-3.5 min-h-12 font-sans text-sm text-ink-950 outline-none focus:border-2 focus:border-ink-950 focus:px-[13px]";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> &
   FieldWrapperProps;

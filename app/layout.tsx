@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Poppins, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
-import { ChromeProvider } from "@/lib/chrome-context";
 import { NavBar } from "./components/domain/NavBar";
 
-const fraunces = Fraunces({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -36,14 +30,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${poppins.variable} ${plexMono.variable}`}>
       <body className="font-sans antialiased">
         <AuthProvider>
           <ToastProvider>
-            <ChromeProvider>
-              <NavBar />
-              <main>{children}</main>
-            </ChromeProvider>
+            <NavBar />
+            <main>{children}</main>
           </ToastProvider>
         </AuthProvider>
       </body>

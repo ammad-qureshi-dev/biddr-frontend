@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Pencil, Play, Pause, Lock, X, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { auctionApi, ApiError } from "@/lib/api";
@@ -29,6 +30,11 @@ const STATUS_LABEL: Record<AuctionStatus, string> = {
   LIVE: "Live",
   PAUSED: "Paused",
   CLOSED: "Closed",
+};
+
+const STATUS_ICON: Partial<Record<AuctionStatus, typeof Play>> = {
+  LIVE: Play,
+  PAUSED: Pause,
 };
 
 export default function AuctionDetailPage() {
@@ -66,6 +72,7 @@ export default function AuctionDetailPage() {
           body="This auction may have been removed or the link is incorrect."
           actionLabel="Browse auctions"
           actionHref="/"
+          actionIcon={Search}
         />
       </div>
     );
@@ -128,18 +135,21 @@ export default function AuctionDetailPage() {
       </div>
 
       {isOwner && auction.auctionStatus !== "CLOSED" && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-paper-100 px-4 py-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-paper-100 px-4 py-3">
           <span className="font-sans text-xs font-semibold uppercase text-slate-500">
             Owner controls
           </span>
           <Link href={`/auctions/${auctionId}/edit`}>
-            <Button variant="secondary">Edit</Button>
+            <Button variant="secondary" icon={Pencil}>
+              Edit
+            </Button>
           </Link>
           {NEXT_STATUS[auction.auctionStatus].map((status) =>
             status === "CLOSED" ? (
               <Button
                 key={status}
                 variant="secondary"
+                icon={Lock}
                 disabled={busy}
                 onClick={() => setConfirmClose(true)}
               >
@@ -149,6 +159,7 @@ export default function AuctionDetailPage() {
               <Button
                 key={status}
                 variant="secondary"
+                icon={STATUS_ICON[status]}
                 disabled={busy}
                 onClick={() => changeStatus(status)}
               >
@@ -178,10 +189,10 @@ export default function AuctionDetailPage() {
           undone.
         </p>
         <div className="mt-5 flex justify-end gap-3">
-          <Button variant="tertiary" onClick={() => setConfirmClose(false)}>
+          <Button variant="tertiary" icon={X} onClick={() => setConfirmClose(false)}>
             Cancel
           </Button>
-          <Button disabled={busy} onClick={() => changeStatus("CLOSED")}>
+          <Button icon={Lock} disabled={busy} onClick={() => changeStatus("CLOSED")}>
             Close auction
           </Button>
         </div>

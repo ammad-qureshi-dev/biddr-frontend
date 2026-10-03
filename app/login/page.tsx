@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LogIn } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { Input } from "../components/ui/Input";
@@ -58,7 +59,7 @@ export default function LoginPage() {
           required
         />
         {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" icon={LogIn} disabled={submitting}>
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>

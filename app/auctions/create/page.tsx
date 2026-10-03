@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2, Plus, Gavel } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, ItemRequest } from "@/lib/types";
@@ -85,7 +86,7 @@ export default function CreateAuctionPage() {
         <div className="flex flex-col gap-4">
           <span className="font-sans text-[13px] text-slate-500">Items</span>
           {items.map((item, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-paper-100 p-4">
+            <div key={i} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-paper-100 p-4">
               <div className="flex items-center justify-between">
                 <span className="font-sans text-xs font-semibold uppercase text-slate-500">
                   Item {i + 1}
@@ -94,8 +95,9 @@ export default function CreateAuctionPage() {
                   <button
                     type="button"
                     onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="font-sans text-xs text-ledger-red hover:underline"
+                    className="flex items-center gap-1 font-sans text-xs text-ledger-red hover:underline"
                   >
+                    <Trash2 className="h-3.5 w-3.5" />
                     Remove
                   </button>
                 )}
@@ -130,6 +132,7 @@ export default function CreateAuctionPage() {
           <Button
             type="button"
             variant="secondary"
+            icon={Plus}
             onClick={() => setItems((prev) => [...prev, emptyItem()])}
           >
             Add another item
@@ -137,7 +140,7 @@ export default function CreateAuctionPage() {
         </div>
 
         {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" icon={Gavel} disabled={submitting}>
           {submitting ? "Creating…" : "Create auction"}
         </Button>
       </form>

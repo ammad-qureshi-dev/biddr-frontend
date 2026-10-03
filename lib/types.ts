@@ -147,3 +147,12 @@ export type NotificationResponse = {
   status: NotificationStatus;
   subject: string;
 };
+
+export type PageResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+};

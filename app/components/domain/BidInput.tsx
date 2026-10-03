@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Minus, Plus, Gavel, X, Check } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { formatMoney } from "@/lib/format";
@@ -50,23 +51,23 @@ export function BidInput({
           type="button"
           aria-label="Decrease bid amount"
           onClick={() => setAmount((a) => Math.max(floor + step, a - step))}
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 font-mono text-lg text-ink-950 hover:border-brass-500"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-ink-950 hover:border-ink-950"
         >
-          −
+          <Minus className="h-4 w-4" />
         </button>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
-          className="tabular-ticker h-11 w-full flex-1 rounded-lg border border-slate-200 bg-paper-100 px-3 text-center text-lg font-semibold text-ink-950 outline-none focus:border-2 focus:border-brass-500"
+          className="tabular-ticker h-11 w-full flex-1 rounded-xl border border-slate-200 bg-paper-50 px-3 text-center text-lg font-semibold text-ink-950 outline-none focus:border-2 focus:border-ink-950"
         />
         <button
           type="button"
           aria-label="Increase bid amount"
           onClick={() => setAmount((a) => a + step)}
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 font-mono text-lg text-ink-950 hover:border-brass-500"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-ink-950 hover:border-ink-950"
         >
-          +
+          <Plus className="h-4 w-4" />
         </button>
       </div>
       <span className="font-sans text-xs text-slate-500">
@@ -83,6 +84,7 @@ export function BidInput({
         <span className="font-sans text-xs text-slate-500">{disabledReason}</span>
       )}
       <Button
+        icon={Gavel}
         disabled={disabled || belowFloor}
         onClick={() => setConfirmOpen(true)}
       >
@@ -98,10 +100,10 @@ export function BidInput({
           . This can&apos;t be undone.
         </p>
         <div className="mt-5 flex justify-end gap-3">
-          <Button variant="tertiary" onClick={() => setConfirmOpen(false)}>
+          <Button variant="tertiary" icon={X} onClick={() => setConfirmOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={confirm} disabled={submitting}>
+          <Button icon={Check} onClick={confirm} disabled={submitting}>
             {submitting ? "Placing…" : `Confirm ${formatMoney(amount)}`}
           </Button>
         </div>

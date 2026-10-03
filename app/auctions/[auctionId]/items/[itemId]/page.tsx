@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Check, X, Ban } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { useSlimNav } from "@/lib/chrome-context";
 import { rememberItemAuction } from "@/lib/item-auction-cache";
 import { auctionApi, itemApi, bidApi, ApiError } from "@/lib/api";
 import type { AuctionResponse, BidSummaryResponse, ItemResponse } from "@/lib/types";
@@ -33,7 +33,7 @@ export default function ItemDetailPage() {
   const load = useCallback(() => {
     auctionApi.getById(auctionId).then(setAuction).catch(() => setNotFound(true));
     itemApi.getById(itemId).then(setItem).catch(() => setNotFound(true));
-    bidApi.getForItem(itemId).then(setBids).catch(() => setBids([]));
+    bidApi.getTopTenForItem(itemId).then(setBids).catch(() => setBids([]));
     rememberItemAuction(itemId, auctionId);
   }, [auctionId, itemId]);
 
@@ -42,7 +42,6 @@ export default function ItemDetailPage() {
   }, [load]);
 
   const isLive = auction?.auctionStatus === "LIVE";
-  useSlimNav(isLive ?? false);
 
   if (notFound) {
     return (
@@ -60,7 +59,10 @@ export default function ItemDetailPage() {
   }
 
   const isOwner = user?.id === auction.ownerId;
-  const currentHighestBid = bids.find((b) => b.id === item.highestBidId) ?? null;
+  // Bidding-service is the source of truth for the leading bid: after a rejection it promotes
+  // the next bid to ACTIVE but never updates catalog's cached item.highestBidId/highestBidAmount.
+  const currentHighestBid = bids.find((b) => b.status === "ACTIVE" || b.status === "WINNER") ?? null;
+  const leadingAmount = bids.length > 0 ? (currentHighestBid?.amount ?? null) : item.highestBidAmount;
   const myBid = user ? bids.find((b) => b.bidderId === user.id) : undefined;
   const bidState: "default" | "winning" | "outbid" =
     user && currentHighestBid?.bidderId === user.id
@@ -136,80 +138,22 @@ export default function ItemDetailPage() {
   const ownerActions = (canAccept || canReject) && (
     <div className="flex gap-3">
       {canAccept && (
-        <Button disabled={busy} onClick={handleAccept}>
+        <Button icon={Check} disabled={busy} onClick={handleAccept}>
           Accept bid
         </Button>
       )}
       {canReject && (
-        <Button variant="secondary" disabled={busy} onClick={() => setRejectTarget(currentHighestBid!.id)}>
+        <Button
+          variant="secondary"
+          icon={Ban}
+          disabled={busy}
+          onClick={() => setRejectTarget(currentHighestBid!.id)}
+        >
           Reject bid
         </Button>
       )}
     </div>
   );
-
-  if (isLive) {
-    return (
-      <div className="min-h-[calc(100vh-3.5rem)] bg-ink-950 text-paper-50">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 pt-6">
-          <Link href={`/auctions/${auctionId}`} className="font-sans text-xs text-slate-200 hover:text-brass-500">
-            ← {auction.title}
-          </Link>
-          <h1 className="font-display text-3xl font-semibold">{item.title}</h1>
-        </div>
-
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-[2fr_1fr]">
-          <div className="flex flex-col items-center gap-8 text-center">
-            <div className="flex flex-col items-center gap-1">
-              <span className="font-sans text-xs uppercase tracking-widest text-slate-200">
-                Closes in
-              </span>
-              <CountdownTimer target={auction.endTime} size="lg" onDark />
-            </div>
-            <BidAmountDisplay
-              amount={item.highestBidAmount}
-              state={bidState}
-              bidCount={bids.length}
-              reserveMet={item.minimumPrice !== null ? item.highestBidAmount !== null : undefined}
-              size="lg"
-              onDark
-            />
-            {ownerActions}
-            {canBid && (
-              <div className="w-full max-w-xs">
-                <BidInput
-                  currentHighest={item.highestBidAmount}
-                  minimumPrice={item.minimumPrice}
-                  onSubmit={handleBid}
-                />
-              </div>
-            )}
-            {!canBid && bidDisabledReason && (
-              <p className="font-sans text-sm text-slate-200">{bidDisabledReason}</p>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-slate-700 bg-ink-800 p-5">
-            <h2 className="font-sans text-xs font-semibold uppercase tracking-wide text-slate-200">
-              Live activity
-            </h2>
-            <div className="mt-4">
-              <BidList bids={bids} currentUserId={user?.id} variant="ticker" />
-            </div>
-          </div>
-        </div>
-
-        <RejectModal
-          open={!!rejectTarget}
-          reason={rejectReason}
-          setReason={setRejectReason}
-          onClose={() => setRejectTarget(null)}
-          onConfirm={handleReject}
-          busy={busy}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -217,7 +161,7 @@ export default function ItemDetailPage() {
         ← {auction.title}
       </Link>
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[3fr_2fr]">
-        <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-slate-200 bg-paper-100">
+        <div className="flex aspect-square items-center justify-center self-start rounded-2xl bg-paper-100">
           <span className="font-display text-6xl text-slate-200">
             {item.title.charAt(0).toUpperCase()}
           </span>
@@ -225,16 +169,24 @@ export default function ItemDetailPage() {
 
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="font-display text-3xl font-semibold text-ink-950">{item.title}</h1>
+            <h1 className="font-display text-2xl font-semibold text-ink-950">{item.title}</h1>
             <p className="mt-2 font-sans text-sm text-slate-500">{item.description}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-paper-100 p-5">
+          <div className="rounded-2xl border border-slate-200 p-5">
+            {isLive && (
+              <div className="mb-4 flex items-center gap-1.5">
+                <span className="h-2 w-2 animate-pulse-urgent rounded-full bg-brass-500" />
+                <span className="font-sans text-xs font-semibold uppercase tracking-wide text-brass-500">
+                  Live now
+                </span>
+              </div>
+            )}
             <BidAmountDisplay
-              amount={item.highestBidAmount}
+              amount={leadingAmount}
               state={bidState}
               bidCount={bids.length}
-              reserveMet={item.minimumPrice !== null ? item.highestBidAmount !== null : undefined}
+              reserveMet={item.minimumPrice !== null ? leadingAmount !== null : undefined}
             />
             {(auction.auctionStatus === "LIVE" || auction.auctionStatus === "UPCOMING") && (
               <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
@@ -250,7 +202,7 @@ export default function ItemDetailPage() {
             {canBid ? (
               <div className="mt-4 border-t border-slate-200 pt-4">
                 <BidInput
-                  currentHighest={item.highestBidAmount}
+                  currentHighest={leadingAmount}
                   minimumPrice={item.minimumPrice}
                   onSubmit={handleBid}
                 />
@@ -265,7 +217,7 @@ export default function ItemDetailPage() {
           </div>
 
           <div>
-            <h2 className="font-display text-lg font-semibold text-ink-950">Bid history</h2>
+            <h2 className="font-display text-lg font-semibold text-ink-950">Top bids</h2>
             <div className="mt-3">
               <BidList bids={bids} currentUserId={user?.id} />
             </div>
@@ -310,10 +262,10 @@ function RejectModal({
         placeholder="e.g. insufficient funds"
       />
       <div className="mt-5 flex justify-end gap-3">
-        <Button variant="tertiary" onClick={onClose}>
+        <Button variant="tertiary" icon={X} onClick={onClose}>
           Cancel
         </Button>
-        <Button disabled={busy || !reason.trim()} onClick={onConfirm}>
+        <Button icon={Ban} disabled={busy || !reason.trim()} onClick={onConfirm}>
           Reject bid
         </Button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Trash2, Plus, Save } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, AuctionResponse, ItemRequest } from "@/lib/types";
@@ -115,7 +116,7 @@ export default function EditAuctionPage() {
           {auction.items.map((it) => (
             <div
               key={it.id}
-              className="rounded-lg border border-slate-200 bg-paper-100 p-3 font-sans text-sm"
+              className="rounded-xl border border-slate-200 bg-paper-100 p-3 font-sans text-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink-950">{it.title}</span>
@@ -133,7 +134,7 @@ export default function EditAuctionPage() {
         <div className="flex flex-col gap-4">
           <span className="font-sans text-[13px] text-slate-500">Add new items</span>
           {newItems.map((item, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-paper-100 p-4">
+            <div key={i} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-paper-100 p-4">
               <div className="flex items-center justify-between">
                 <span className="font-sans text-xs font-semibold uppercase text-slate-500">
                   New item {i + 1}
@@ -141,8 +142,9 @@ export default function EditAuctionPage() {
                 <button
                   type="button"
                   onClick={() => setNewItems((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="font-sans text-xs text-ledger-red hover:underline"
+                  className="flex items-center gap-1 font-sans text-xs text-ledger-red hover:underline"
                 >
+                  <Trash2 className="h-3.5 w-3.5" />
                   Remove
                 </button>
               </div>
@@ -172,13 +174,18 @@ export default function EditAuctionPage() {
               />
             </div>
           ))}
-          <Button type="button" variant="secondary" onClick={() => setNewItems((prev) => [...prev, emptyItem()])}>
+          <Button
+            type="button"
+            variant="secondary"
+            icon={Plus}
+            onClick={() => setNewItems((prev) => [...prev, emptyItem()])}
+          >
             Add item
           </Button>
         </div>
 
         {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" icon={Save} disabled={submitting}>
           {submitting ? "Saving…" : "Save changes"}
         </Button>
       </form>

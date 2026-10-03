@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MailCheck, Save, Mail, MessageSquare, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { appUserApi, authApi, ApiError } from "@/lib/api";
@@ -122,20 +123,20 @@ export default function AccountPage() {
       <h1 className="mt-1 font-display text-3xl font-semibold text-ink-950">{user.fullName}</h1>
 
       {verified === false && (
-        <section className="mt-8 rounded-xl border border-slate-200 bg-paper-100 p-5">
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
           <h2 className="font-display text-lg font-semibold text-ink-950">
             Verify your account
           </h2>
           <p className="mt-1 font-sans text-sm text-slate-500">
             We&apos;ll email a verification link to your registered address.
           </p>
-          <Button className="mt-4" onClick={handleSendVerification} disabled={busy}>
+          <Button className="mt-4" icon={MailCheck} onClick={handleSendVerification} disabled={busy}>
             Send verification link
           </Button>
         </section>
       )}
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-paper-100 p-5">
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
         <h2 className="font-display text-lg font-semibold text-ink-950">Contact methods</h2>
         <dl className="mt-3 flex flex-col gap-2 font-sans text-sm">
           <div className="flex items-center justify-between">
@@ -149,7 +150,7 @@ export default function AccountPage() {
         </dl>
       </section>
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-paper-100 p-5">
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
         <h2 className="font-display text-lg font-semibold text-ink-950">
           Preferred contact method
         </h2>
@@ -174,7 +175,7 @@ export default function AccountPage() {
               onChange={(e) => setNewContactValue(e.target.value)}
             />
           )}
-          <Button onClick={handleSetPreferred} disabled={busy}>
+          <Button icon={Save} onClick={handleSetPreferred} disabled={busy}>
             Save preference
           </Button>
           {preferred?.type && (
@@ -185,7 +186,7 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-paper-100 p-5">
+      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
         <h2 className="font-display text-lg font-semibold text-ink-950">Password</h2>
         <p className="mt-1 font-sans text-sm text-slate-500">
           We&apos;ll send a reset link to your email or phone.
@@ -193,6 +194,7 @@ export default function AccountPage() {
         <div className="mt-4 flex gap-3">
           <Button
             variant="secondary"
+            icon={Mail}
             onClick={() => handleSendReset("EMAIL")}
             disabled={busy || !contacts || contacts.EMAIL === NOT_APPLICABLE}
           >
@@ -200,6 +202,7 @@ export default function AccountPage() {
           </Button>
           <Button
             variant="secondary"
+            icon={MessageSquare}
             onClick={() => handleSendReset("PHONE")}
             disabled={busy || !contacts || contacts.PHONE === NOT_APPLICABLE}
           >
@@ -208,7 +211,12 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <Button variant="tertiary" className="mt-8" onClick={() => logout().then(() => router.push("/"))}>
+      <Button
+        variant="tertiary"
+        icon={LogOut}
+        className="mt-8"
+        onClick={() => logout().then(() => router.push("/"))}
+      >
         Log out
       </Button>
     </div>

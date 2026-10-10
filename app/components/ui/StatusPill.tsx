@@ -1,18 +1,18 @@
-type PillTone = "green" | "red" | "slate" | "ink" | "red-outline";
+export type PillTone = "success" | "danger" | "warning" | "info" | "neutral";
 
-const toneClass: Record<PillTone, string> = {
-  green: "bg-ledger-green text-white",
-  red: "bg-ledger-red text-white",
-  slate: "bg-slate-500 text-white",
-  ink: "bg-ink-950 text-white",
-  "red-outline": "bg-transparent border border-ledger-red text-ledger-red",
+const dotClass: Record<PillTone, string> = {
+  success: "bg-success",
+  danger: "bg-danger",
+  warning: "bg-warning",
+  info: "bg-accent",
+  neutral: "bg-faint",
 };
 
+/** Status as a small colored dot plus a text label — color is never the only signal. */
 export function StatusPill({ label, tone }: { label: string; tone: PillTone }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 font-sans text-xs font-semibold uppercase tracking-wide ${toneClass[tone]}`}
-    >
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-fg">
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass[tone]}`} />
       {label}
     </span>
   );

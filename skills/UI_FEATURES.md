@@ -10,168 +10,114 @@
 
 Bidder is a live-bidding auction platform (general goods, cars, real estate). One instinct still holds regardless of visual style: **auctions are a scoreboard, not a catalog.** The number is the content. Time is the content. Everything else — copy, chrome, decoration — supports those two things and gets out of the way when the clock is running.
 
-**Direction: "Airbnb."** This is a single-theme **light** application — there is no dark mode and no toggle, the whole product is always light. It's an image-forward listings product: generous rounded corners (`rounded-2xl` on cards/images, fully pill-shaped buttons and search fields), borderless cards that rely on whitespace and a large square image instead of a bordered panel, soft hover lift/zoom instead of shadows-as-decoration. Colorwise: a white/off-white app background, a single coral accent (Airbnb's own "Rausch" red-pink), near-black text, neutral (not cold) grays. One typeface family (Poppins) for everything except numbers, which stay monospace.
+**Direction: "quiet SaaS workspace."** Modeled on dribbble.com/shots/27531624-AI-Voice-SaaS-Dashboard-Design. Near-monochrome: a flat sidebar sitting directly on a gray canvas, one large white content panel with the top bar built into it, cards with hairline borders, black primary buttons. It should look hand-designed and simple, not generated — restraint is the whole point.
 
-Bid amounts and countdowns still snap rather than fade, and status is still color-coded — that mechanical-ticker precision survives every visual direction this doc has been through.
+**Themes:** dark is the default; a sun/moon button in the top bar switches to light (the reference look) and the choice is remembered per browser (`localStorage` key `bidder.theme`, applied as `<html data-theme="light">` by an inline pre-paint script in `app/layout.tsx`, so there's no flash). Every color comes from a token so both themes work.
 
-Avoid: gradients, neon, confetti, dark panels floating in the light UI, drop shadows as decoration, cold/gray-blue tints (grays are neutral, warm-leaning like Airbnb's own, not slate-blue), and don't build a dark-mode variant or a theme switcher — light is the only theme. Structure and whitespace carry the hierarchy; the accent color is spent sparingly and only when it means something.
+**Don't (the "vibe-coded" tells):**
+- Icons in colored circles/tiles next to every heading, stat, row, toast, or empty state. Icons appear only in nav, buttons, and the auction-card thumbnail tile.
+- Filled/soft-colored badges everywhere. Status is a small colored dot + plain text.
+- Big stat cards for facts that aren't the point of the page; uppercase tracked eyebrows; ID/lot-number noise; pulsing decorations; a description sentence under every heading.
+- Gradients, glows, emoji, drop shadows as decoration (only modals, toasts, and the active nav item get a faint shadow).
+- Accent color as decoration. Blue is reserved for links and the focus ring.
 
 ---
 
 ## 2. Color System
 
-> Token names below (`ink`, `paper`, `brass`, `ledger-*`) are historical from earlier visual directions this doc has cycled through — kept as-is so component code doesn't need renaming every time the palette changes. Read the Hex/Use columns as ground truth, not the names.
+Tokens live in `app/globals.css`: dark values in `@theme` (the default), light values under `:root[data-theme="light"]`. Use them as Tailwind classes (`bg-canvas`, `text-muted`, `border-line`, …); a `light:` variant exists for rare theme-specific tweaks. Hex values are **light / dark**.
 
-| Token            | Hex       | Use                                                                                   |
-| ---------------- | --------- | -------------------------------------------------------------------------------------- |
-| `--ink-950`      | `#222222` | Primary text and borders/outlines — near-black, drawn on the light app background      |
-| `--ink-800`      | `#484848` | Secondary dark tone, rarely used directly                                              |
-| `--paper-50`     | `#FFFFFF` | Page background — white, the base the whole app sits on                                |
-| `--paper-100`    | `#F7F7F7` | Elevated surface — cards, panels, image placeholders; one step darker than the page so content reads as "raised" without a shadow |
-| `--brass-500`    | `#FF385C` | Primary accent — Airbnb's "Rausch" coral. CTAs, links, focus ring, selected states      |
-| `--brass-600`    | `#E61E4D` | Accent hover/pressed                                                                    |
-| `--ledger-green` | `#00A699` | Winning / live / success status (a teal-leaning green, distinct from the coral accent so "you're winning" doesn't visually blend into every button on the page) |
-| `--ledger-red`   | `#D93900` | Outbid / error / closes-soon urgency                                                   |
-| `--slate-500`    | `#717171` | Secondary text, metadata, timestamps                                                    |
-| `--slate-200`    | `#EBEBEB` | Borders, dividers — a step darker than the page background, not lighter                 |
-| `--slate-700`    | `#484848` | Rarely used; a slightly stronger border/divider than slate-200 for components that need more separation |
+| Token          | Hex                     | Use                                                                |
+| -------------- | ----------------------- | ------------------------------------------------------------------ |
+| `canvas`       | `#F4F4F6` / `#0B0B0D`   | Behind the sidebar and around the content panel                    |
+| `surface`      | `#FFFFFF` / `#131316`   | Content panel, cards, inputs, modals; text on an `fg` fill         |
+| `subtle`       | `#F6F6F8` / `#1B1B1F`   | Search field, segmented track, thumbnail tiles, fact tiles, hover rows |
+| `line`         | `#EBEBEE` / `#25252A`   | Every border and divider                                           |
+| `line-strong`  | `#DDDDE2` / `#323238`   | Hover borders                                                      |
+| `fg`           | `#111013` / `#EDEDEF`   | Text; **primary button fill**; selected category chips              |
+| `muted`        | `#6E6E76` / `#A1A1A9`   | Secondary text, labels, table headers                              |
+| `faint`        | `#A1A1A8` / `#6C6C74`   | Chevrons, placeholders, the neutral status dot                     |
+| `accent`       | `#1789FE` / `#4AA3FF`   | Links, focus ring, "Upcoming"/"Winner"/"Sent" status dots          |
+| `success`      | `#15924A` / `#3CCB7F`   | Live / winning / active bid                                        |
+| `danger`       | `#D83B21` / `#F0674F`   | Outbid / rejected / errors / under-5-minute countdown / reserve not met |
+| `warning`      | `#B26B00` / `#E3A43B`   | Paused                                                             |
 
-Rules:
-
-- **Text drawn directly on the coral accent (or on the status greens/reds) is always white, never dark.** Coral, the status green, and the status red are all saturated/dark enough that white text passes contrast comfortably — buttons, selected chips, and status pills all use literal `text-white` for their on-fill text. (If the accent or a status color is ever swapped for something pale/pastel, re-check this — a light enough fill color needs dark on-fill text instead, as was true during an earlier mint-green accent pass.)
-- Elevation is tonal, not shadow-based: the page is `paper-50`, anything meant to read as a card/panel/dialog sits on `paper-100`, separated by a thin `slate-200` border. Don't reach for `box-shadow` to separate surfaces.
-- The accent (`brass-500`, coral) is spent on exactly one thing per screen: the primary action, a link, or a selected/focused state.
-- `ledger-green` (status) and `brass-500` (accent, coral) are deliberately different hues so a "you're winning" indicator doesn't read as just another button.
-- Modal/overlay scrims are a literal `black/70` — this works regardless of the app's base theme.
-- Red is reserved for bid/auction urgency and errors. Don't reuse it for unrelated UI.
+Each status color has a `-soft` variant used only for inline error/success callouts (e.g. a form error box). `success`/`danger` mean bid/auction status and errors — don't reuse them elsewhere. Scrims are `black/40`.
 
 ---
 
 ## 3. Typography
 
-| Role                | Typeface                            | Notes                                                                                                                                                                                                       |
-| ------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Display / headlines | **Poppins**, semibold–bold           | Auction titles, item names, page headings. A rounded geometric sans, warmer than a neutral UI font, still legible at every size. (The `font-display` class exists in code for these spots and now maps to Poppins.) |
-| UI / body           | **Poppins**                          | Nav, buttons, form labels, descriptions — the whole app uses one family, at different weights, rather than pairing a display font with a separate body font.                                              |
-| Numeric / ticker    | **IBM Plex Mono** (tabular figures)  | **All bid amounts, countdown timers, lot numbers, currency.** Fixed-width digits so numbers don't jiggle the layout when they update — the one place the app intentionally breaks from Poppins, because tabular alignment matters more than typeface consistency for money and time. |
-
-Type scale (base 16px):
-
-- Display XL: 40 / 44, semibold — page hero title
-- Display L: 24 / 28, semibold — item title on detail page, lot card titles
-- Ticker XL: 44px mono, tabular-nums — live current-bid figure
-- Ticker M: 20px mono — countdown, secondary bid figures on cards
-- Body: 16 / 24 — descriptions
-- Caption: 13 / 18, `--slate-500` — metadata, timestamps, lot numbers
+- **Inter**, loaded via `next/font/google` with the `opsz` axis, so large headings automatically render in the Inter Display cut (as in the reference). Used for everything.
+- **Instrument Serif italic** (`font-serif italic font-normal`, ~1.12em) as a single accent word in a page title — currently only "Live & upcoming *auctions*" and "Welcome *back*" on sign-in. Never more than one per screen; don't add it to new screens by default.
+- Numbers (money, countdowns, dates, counts) use `.tabular-ticker` (tabular figures) so they don't jiggle.
+- Weights: 600 for page/card titles, 500 for row titles and buttons, 400 for everything else. Headings get `-0.02em` tracking.
+- Scale: page title 34px (28px mobile) · top-bar title 17px · card title 17px · body 14–15px · labels, table headers, metadata 13px `muted` · current bid 40px.
 
 ---
 
 ## 4. Core Components
 
-### 4.1 Buttons
+Shared primitives live in `app/components/ui/`; domain components in `app/components/domain/`.
 
-Three tiers only — don't add a fourth without a reason.
+### 4.1 App shell (`AppShell`)
 
-- **Primary (Bid actions):** Solid `--brass-500` fill, white text, fully pill-shaped (`rounded-full`), bold weight. Pressed state darkens to `--brass-600` and scales to 98%. Reserved exclusively for the primary CTA on any given screen (Place Bid, Confirm Bid, Register) — there is only ever **one** primary button visible at a time.
-- **Secondary:** 1.5px `--ink-950` outline, transparent fill, pill-shaped. For Watch/Save, Ask a Question, View Details.
-- **Tertiary / text:** No border, `--slate-500` text, underline on hover. For Cancel, Learn more, in-table row actions.
-- All buttons: 44px min height (touch target), no gradients, no shadows on the button itself.
-- Every button and CTA carries a leading icon (16px, `lucide-react`) — pick one that names the action, not a decorative one: `Gavel` for bid/auction actions, `Check`/`X`/`Ban` for accept/cancel/reject, `Plus`/`Trash2` for add/remove item rows, `Save` for saving a form, `LogIn`/`LogOut`/`UserPlus` for auth, `Mail`/`MessageSquare`/`Send` for contact actions, `Search` for browse/find. Nav links follow the same rule (see §4.8). The shared `Button` component takes an `icon` prop for this — don't hand-roll icon + label markup outside it if a plain `<Button>` will do.
+- **Sidebar** (lg+): flat on `canvas`, no card. "Bidder" wordmark (text only), then nav: Browse auctions, then a "Workspace" label with My Auctions, My Bids, Notifications, Account, New auction (signed in). Items are 14px text with a muted 18px icon; the active item is a `surface` pill with a `line` border and a faint shadow. Bottom: a bordered card with the signed-in user, or "Start bidding / Log in" when signed out.
+- **Content panel**: one `surface` panel, `rounded-2xl`, `line` border, 8px inset from the viewport.
+- **Top bar**: sticky inside the panel with a `line` bottom border. Page title left; right side holds the search field (gray `subtle` fill, "Search auctions"), the theme toggle, notifications and avatar, or Log in / Register when signed out. Icon buttons are 40px squares with a `line` border. The search filters browse live via `?q=`; elsewhere Enter jumps to browse with that query.
+- **Mobile** (< lg): the sidebar becomes a slide-in drawer from a menu button, and search drops to its own row.
+- **Auth routes** (`/login`, `/register`, `/password/reset`, `/verify-account`) have no shell: wordmark above one centered bordered card.
 
-### 4.2 Bid Amount Display
+### 4.2 Buttons (`Button`, `LinkButton`)
 
-The signature component. Always mono/tabular-nums, always right-aligned in tables so digits line up. On update (a new bid lands), the digits **flip/snap** — not a fade or slide. Treat each digit like a mechanical odometer character.
+Radius 10px, 44px min height (`size="sm"` 36px), weight 500, leading 16px `lucide-react` icon where it names the action.
 
-```
-CURRENT BID
-$ 48,500
-↑ 12 bids · reserve met
-```
+- **Primary:** `fg` fill with `surface` text, so black in light mode and near-white in dark. Only **one** visible per screen.
+- **Secondary:** `surface` with a `line` border.
+- **Tertiary:** text only, `muted` → `fg` on hover.
+- Use `LinkButton` for navigation, never a `<button>` inside a `<Link>`.
 
-States:
+### 4.3 Cards, tables, summary strips
 
-- Default: `--ink-950` on paper / `--paper-50` on ink
-- You are winning: number rendered in `--ledger-green`, small "you're winning" tag
-- You've been outbid: number in `--ledger-red`, tag "outbid — bid again"
-- Reserve not met: amount in default color, small red flag icon + "reserve not met" caption
+- `Card`: `surface`, `rounded-2xl`, `line` border. `CardHeader`: 17px semibold title, optional short description, actions right.
+- Tables sit flush in a card: 13px `muted` header row (normal weight), rows divided by `line`, whole row clickable with a trailing chevron, numbers right-aligned and tabular. Wrap wide tables in `relative overflow-x-auto`. The `relative` matters: without it, `sr-only` header labels escape the scroll container and cause sideways page scroll on mobile.
+- **Summary strip** for at-a-glance facts (auction countdown, item count, start, end): one card split by 1px `line` gaps, each cell a 13px muted label over a 15px medium value, with no icons. Don't repeat something already shown above the title (e.g. status).
+- **Fact tiles** (item details): `subtle` rounded tiles with a label/value, in a 2-column grid.
 
-### 4.3 Countdown Timer
+### 4.4 Bid Amount Display
+13px muted "Current Bid" label, then a 40px tabular figure that snaps on change, then a plain-text line: bid count, plus "You're winning" (success), "Outbid — bid again" (danger), or "Reserve not met" (danger, flag icon). No pills.
 
-Mono ticker, `HH:MM:SS`, always tabular width so it doesn't reflow the layout. Under 5 minutes: switch to `--ledger-red`, add a slow pulse (opacity 100%→85%→100%, 1.2s ease, not a hard blink). Under 60 seconds: seconds digits go bold. Never use a circular progress ring as the primary countdown — a ring can't be read at a glance the way digits can; use one only as a small secondary accent if needed.
+### 4.5 Countdown Timer
+Tabular `HH:MM:SS`. Under 5 minutes: `danger` with a slow pulse (opacity 100%→85%, 1.2s). Under 60 seconds: seconds go bold. No progress rings.
 
-### 4.4 Lot Card (catalog grid)
+### 4.6 Status (`StatusPill`)
+6px colored dot + 13px `fg` text. Tones: `success` (Live, Active), `danger` (Ending soon, Outbid, Rejected, Failed to send), `warning` (Paused), `info` (Upcoming, Winner, Sent), `neutral` (Closed, Opened, Sold, Pending/Withdrawn).
 
-```
-┌─────────────────────────┐
-│                          │  ← square image, rounded-2xl, no border
-│                          │     status pill floats top-right on the image
-│                          │
-└─────────────────────────┘
-  LOT 0042          ⏱ 2:14:09      ← below the image, not inside a card panel
-  1967 Porsche 911S               ← Poppins, semibold
-  CURRENT BID
-  $ 48,500                        ← mono ticker
-```
+### 4.7 Segmented control (`Segmented`)
+`subtle` track with 10px radius; the selected option is a `surface` pill with a hairline ring. Used for the browse status filter, My Bids filter (with counts), and the notifications channel filter. It scrolls horizontally rather than wrapping.
 
-- No card border or background — the "card" is just a large square image (`rounded-2xl`, neutral-gray placeholder if there's no photo) with the title/metadata sitting directly on the page below it, Airbnb-listing style. On hover, the image scales up slightly (~1.05×); the text block doesn't move.
-- Lot number always top-left in mono caption style, small and quiet — it's a reference number, not a headline.
-- Status badge (Live / Upcoming / Closed / Reserve Not Met) floats top-right *on the image* as a pill: solid fill, color per §2.
-
-### 4.5 Status Pills / Badges
-
-Pill shape (`rounded-full`), 4px vertical / 10px horizontal padding, 12px caption text, uppercase, letterspaced.
-
-- **Live** — `--ledger-green` fill, white text
-- **Ending Soon** — `--ledger-red` fill (auto-applies under 15 min), white text
-- **Upcoming** — `--slate-500` fill, white text
-- **Closed / Sold** — `--ink-950` fill, white text
-- **Reserve Not Met** — outline only, `--ledger-red` text, transparent fill
-
-### 4.6 Bid Input / Confirm
-
-Bidding is the highest-stakes interaction in the product — never let it feel like a generic form field.
-
-- Stepper input: `−` / amount / `+` buttons, amount in mono, increments follow the lot's set bid-increment (display it as helper text: "increments of $500").
-- Confirm is a **two-step, deliberate action**: tapping the primary Bid button opens a lightweight confirm sheet/modal ("Confirm bid of $49,000?") rather than firing instantly. This mirrors a real paddle-raise — a beat of intent before commitment — and prevents costly mis-taps.
-- After confirmation: brief full-width toast in `--ledger-green`, "Bid placed — you're the highest bidder," auto-dismiss 4s.
-
-### 4.7 Live Bid Ticker / Activity Feed
-
-A plain list (table on desktop, compact rows generally), same white surface as everything else — no separate dark drawer. Each row: bidder · timestamp (mono, small, `--slate-500`) · status pill · amount (mono, bold, right-aligned). New rows can slide in rather than fade when used as a live-updating feed.
-
-### 4.8 Navigation
-
-- Top nav: same `paper-50` app background as the page, 1px `--slate-200` bottom border, split into two groups. **Left:** logo (accent color) + Browse. **Right:** the signed-in-only links (My Auctions, My Bids, Notifications) immediately followed by the profile avatar — or Log in / Register (pill, accent-filled) when signed out. Nothing sits in the center.
-- Signed-in profile control is a circular avatar (initial of the user's first name, `slate-700` fill) linking to `/account` — not a name + separate logout control. Account/logout live on the account page itself.
-- On a focused bidding view, the nav can collapse to a slim bar (hide the Browse link and the My Auctions/My Bids/Notifications group) so the bid panel gets more room — the avatar and logo stay, and it's still the same `paper-50` bar, it doesn't invert to a different color.
+### 4.8 Bid Input / Confirm
+Stepper `−` / amount / `+` (48px, tabular), helper text with the floor and step. Two-step confirm: Place Bid opens a modal with the amount in a `subtle` tile, plus Cancel (secondary) and Confirm (primary). Results show as a dark toast (`fg` fill, `surface` text) with a small status dot, bottom-right, auto-dismissing after 4s.
 
 ### 4.9 Forms & Inputs
-
-Standard fields: white fill, 1px `--slate-200` border, `rounded-xl` (or `rounded-full` for a search field), 2px `--ink-950` border on focus — focus state is dark, not the accent color, matching how the accent is reserved for actions rather than form chrome. Labels 13px, `--slate-500`, positioned above the field, always visible (no placeholder-as-label).
+`surface` field, `line` border, 10px radius, 44px tall; focus turns the border `fg`. 13px `muted` label above (never placeholder-as-label), hint/error below. Forms split into titled cards; submit is right-aligned at the bottom. Errors show as a `danger-soft` callout.
 
 ### 4.10 Empty / Error States
-
-Written in the interface's voice, not apologetic. Example: an empty "My Bids" page says "You haven't bid on anything yet — browse live auctions" with a primary button straight to the catalog, not a generic illustration-and-shrug.
+A bordered card with a short semibold title, one `muted` sentence in the interface's voice, and at most one secondary button to the next useful place. No icons or illustrations.
 
 ---
 
 ## 5. Page Skeletons
 
-### 5.1 Catalog / Browse
+Every in-shell page starts with a `PageHeader`: optional back link (arrow + muted text), optional `meta` line (status dot, categories), title, optional one-line description, right-aligned actions.
 
-Page heading → sticky filter bar (pill "Live now" toggle, pill search field, status dropdown) → responsive lot-card grid (4.4, borderless image cards) → pagination or infinite scroll.
-
-### 5.2 Item Detail
-
-Two-column: large square image left, bid panel right (bordered card, `rounded-2xl`, `paper-100` surface) containing current bid (4.2), countdown (4.3), bid input (4.6), bid history below. Description below the title. **There is no separate "live room" mode** — when the auction is live, the same layout shows a small pulsing accent-colored "Live now" badge inside the bid card instead of a distinct full-page treatment. One consistent layout regardless of auction status keeps the page simple to reason about.
-
-### 5.3 Results / Post-Auction
-
-Modeled directly on the "Auction Results" inspiration: a table-first layout, mono figures throughout (hammer price, lot #, bid count), sortable columns, final status pill (Sold / Passed / Reserve Not Met) per row. Summary stat strip at top (total lots, total hammer value, sell-through %) in large mono numerals.
-
-### 5.4 My Bids / Account
-
-List of lots grouped by status tabs (Winning / Outbid / Won / Lost), each row reusing the lot-card pattern in a compact horizontal variant.
+- **Browse (`/`)**: header → status segmented control + result count → 3-column grid (2 on tablet, 1 on mobile) of `AuctionCard`s. Each card is a bordered row: a `subtle` thumbnail tile with the category icon, title, "categories · N items", then status + countdown/end date. Infinite scroll.
+- **Auction detail**: header (status + categories meta, owner actions: Edit, Mark Live/Paused, Close auction with confirm modal) → summary strip → Items table card.
+- **Item detail**: two columns on desktop. Left: Details card (description + fact tiles) and Top bids table. Right: sticky bid panel (Live now dot, current bid, countdown row, owner Accept/Reject, bid input). On mobile the panel comes first.
+- **My Bids**: segmented filter with counts (All / Winning / Outbid / Won / Lost) → bids table.
+- **My Auctions**: header with "Create Auction" primary → auctions table card. Infinite scroll.
+- **Notifications**: one "Inbox" card with a channel filter; rows show subject, type status, delivery status.
+- **Account**: profile card (avatar, "Account" label with the verified checkmark or "Not Verified" badge, name, Log out) → settings sections (title/description left, controls right).
 
 ---
 
@@ -186,11 +132,11 @@ List of lots grouped by status tabs (Winning / Outbid / Won / Lost), each row re
 
 ## 7. Responsive & Accessibility Baseline
 
-- Grid: 4-col cards → 2-col (tablet) → 1-col (mobile), bid panel on lot detail becomes a bottom sheet on mobile rather than a sidebar.
+- Grid: 4-col cards → 2-col (tablet) → 1-col (mobile). Sidebar becomes a drawer below `lg`. On item detail the bid panel stacks above the details on mobile. Wide tables scroll horizontally inside their card.
 - All interactive targets ≥44px.
-- Visible keyboard focus on every control (2px `--brass-500` outline, offset 2px) — never `outline: none` without a replacement.
+- Visible keyboard focus on every control (2px `accent` outline, offset 2px) — never `outline: none` without a replacement.
 - Color is never the sole status signal: every status pill also carries a text label (not color/icon alone) for colorblind and screen-reader users.
-- Minimum contrast: body text 4.5:1, mono ticker figures at large sizes may use 3:1 per WCAG large-text allowance but should aim higher given their importance.
+- Minimum contrast: body text 4.5:1, ticker figures at large sizes may use 3:1 per WCAG large-text allowance but should aim higher given their importance.
 
 ---
 
@@ -199,5 +145,5 @@ List of lots grouped by status tabs (Winning / Outbid / Won / Lost), each row re
 - No countdown rings/donut charts as the primary timer.
 - No confetti, gradients, or neon on bid confirmation — a win is confirmed with calm color and clear text, not a celebration animation.
 - No proportional (non-tabular) numerals anywhere money or time appears.
-- Never more than one primary (brass) button on screen at once.
-- Don't reuse `--ledger-green` / `--ledger-red` for anything other than bid status.
+- Never more than one primary (accent) button on screen at once.
+- Don't reuse `success` / `danger` for anything other than bid/auction status and errors.

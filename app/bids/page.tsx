@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { bidApi, itemApi } from "@/lib/api";
 import type { BidStatus, BidSummaryResponse, ItemResponse } from "@/lib/types";
@@ -11,6 +11,9 @@ import { getAuctionForItem } from "@/lib/item-auction-cache";
 import { formatMoney, formatDateTime } from "@/lib/format";
 import { BidStatusPill } from "../components/domain/StatusPills";
 import { EmptyState } from "../components/ui/EmptyState";
+import { Card } from "../components/ui/Card";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Segmented } from "../components/ui/Segmented";
 
 const TABS = [
   { key: "ALL", label: "All", statuses: null },
@@ -43,81 +46,100 @@ export default function MyBidsPage() {
 
   if (!user) return null;
 
+  const inTab = (t: (typeof TABS)[number], b: BidSummaryResponse) =>
+    !t.statuses || (t.statuses as readonly BidStatus[]).includes(b.status);
   const activeTab = TABS.find((t) => t.key === tab)!;
-  const filtered = (bids ?? []).filter(
-    (b) => !activeTab.statuses || (activeTab.statuses as readonly BidStatus[]).includes(b.status),
-  );
+  const filtered = (bids ?? []).filter((b) => inTab(activeTab, b));
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="font-display text-3xl font-semibold text-ink-950">My Bids</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="My Bids" description="Every bid you've placed, across all auctions." />
 
-      <div className="mt-6 flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 font-sans text-sm font-medium ${
-              tab === t.key
-                ? "border-b-2 border-brass-500 text-ink-950"
-                : "text-slate-500 hover:text-ink-950"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Filter bids by status"
+        value={tab}
+        onChange={setTab}
+        options={TABS.map((t) => ({
+          value: t.key,
+          label: (
+            <>
+              {t.label}
+              <span className="tabular-ticker text-muted">{bids === null ? "–" : bids.filter((b) => inTab(t, b)).length}</span>
+            </>
+          ),
+        }))}
+      />
 
-      <div className="mt-6">
-        {bids === null ? (
-          <p className="font-sans text-sm text-slate-500">Loading…</p>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title="You haven't bid on anything yet"
-            body="Browse live auctions and place your first bid."
-            actionLabel="Browse auctions"
-            actionHref="/"
-            actionIcon={Search}
-          />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {filtered.map((bid) => {
-              const item = items[bid.itemId];
-              const auctionId = getAuctionForItem(bid.itemId);
-              const row = (
-                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-paper-100 p-4">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-sans font-medium text-ink-950">
-                      {item?.title ?? "Item"}
-                    </span>
-                    <span className="font-sans text-xs text-slate-500">
-                      Placed {formatDateTime(bid.placedAt)}
-                    </span>
-                    {bid.statusDescription && bid.status === "REJECTED" && (
-                      <span className="font-sans text-xs text-ledger-red">
-                        {bid.statusDescription}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <BidStatusPill status={bid.status} />
-                    <span className="tabular-ticker font-semibold text-ink-950">
-                      {formatMoney(bid.amount)}
-                    </span>
-                  </div>
-                </div>
-              );
-              return auctionId ? (
-                <Link key={bid.id} href={`/auctions/${auctionId}/items/${bid.itemId}`}>
-                  {row}
-                </Link>
-              ) : (
-                <div key={bid.id}>{row}</div>
-              );
-            })}
+      {bids === null ? (
+        <Card className="px-5 py-8 text-center text-sm text-muted">Loading…</Card>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title="You haven't bid on anything yet"
+          body="Browse live auctions and place your first bid."
+          actionLabel="Browse auctions"
+          actionHref="/"
+          actionIcon={Search}
+        />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="relative overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-[13px] text-muted">
+                  <th className="px-5 py-3 font-normal">Item</th>
+                  <th className="px-3 py-3 font-normal">Placed</th>
+                  <th className="px-3 py-3 font-normal">Status</th>
+                  <th className="px-3 py-3 text-right font-normal">Amount</th>
+                  <th className="w-10 px-3 py-3">
+                    <span className="sr-only">Open</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((bid) => {
+                  const item = items[bid.itemId];
+                  const auctionId = getAuctionForItem(bid.itemId);
+                  const href = auctionId ? `/auctions/${auctionId}/items/${bid.itemId}` : null;
+                  return (
+                    <tr
+                      key={bid.id}
+                      onClick={href ? () => router.push(href) : undefined}
+                      className={`border-b border-line last:border-b-0 ${href ? "cursor-pointer hover:bg-subtle" : ""}`}
+                    >
+                      <td className="px-5 py-3.5">
+                        {href ? (
+                          <Link
+                            href={href}
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-medium text-fg hover:underline"
+                          >
+                            {item?.title ?? "Item"}
+                          </Link>
+                        ) : (
+                          <span className="font-medium text-fg">{item?.title ?? "Item"}</span>
+                        )}
+                        {bid.statusDescription && bid.status === "REJECTED" && (
+                          <span className="mt-0.5 block text-[13px] text-danger">{bid.statusDescription}</span>
+                        )}
+                      </td>
+                      <td className="tabular-ticker whitespace-nowrap px-3 py-3.5 text-muted">
+                        {formatDateTime(bid.placedAt)}
+                      </td>
+                      <td className="px-3 py-3.5">
+                        <BidStatusPill status={bid.status} />
+                      </td>
+                      <td className="tabular-ticker px-3 py-3.5 text-right font-medium text-fg">
+                        {formatMoney(bid.amount)}
+                      </td>
+                      <td className="px-3 py-3.5 text-faint">{href && <ChevronRight className="h-4 w-4" />}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </Card>
+      )}
     </div>
   );
 }

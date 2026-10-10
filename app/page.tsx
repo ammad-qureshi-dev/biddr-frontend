@@ -1,24 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { auctionApi } from "@/lib/api";
 import type { AuctionStatus, AuctionSummaryResponse } from "@/lib/types";
 import { AuctionCard } from "./components/domain/AuctionCard";
 import { EmptyState } from "./components/ui/EmptyState";
+import { PageHeader } from "./components/ui/PageHeader";
+import { Segmented } from "./components/ui/Segmented";
 
 const PAGE_SIZE = 25;
 
-export default function BrowsePage() {
-  const [title, setTitle] = useState("");
-  const [liveOnly, setLiveOnly] = useState(false);
+const STATUS_OPTIONS: { value: AuctionStatus | ""; label: React.ReactNode }[] = [
+  { value: "", label: "All" },
+  {
+    value: "LIVE",
+    label: "Live now",
+  },
+  { value: "UPCOMING", label: "Upcoming" },
+  { value: "PAUSED", label: "Paused" },
+  { value: "CLOSED", label: "Closed" },
+];
+
+function BrowseContent() {
+  // The title search lives in the top bar and is mirrored into `?q=`.
+  const title = useSearchParams().get("q") ?? "";
   const [status, setStatus] = useState<AuctionStatus | "">("");
   const [auctions, setAuctions] = useState<AuctionSummaryResponse[] | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const effectiveStatus = liveOnly ? "LIVE" : status || undefined;
 
   useEffect(() => {
     async function run() {
@@ -26,37 +38,36 @@ export default function BrowsePage() {
       try {
         const res = await auctionApi.search({
           title: title || undefined,
-          status: effectiveStatus,
+          status: status || undefined,
           page: 0,
           size: PAGE_SIZE,
         });
         setAuctions(res.content);
+        setTotal(res.totalElements);
         setPage(0);
         setHasNext(res.hasNext);
       } catch {
         setAuctions([]);
+        setTotal(0);
         setHasNext(false);
       }
     }
     run();
-    // effectiveStatus is derived from liveOnly/status, both already tracked below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, liveOnly, status]);
+  }, [title, status]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasNext) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     auctionApi
-      .search({ title: title || undefined, status: effectiveStatus, page: nextPage, size: PAGE_SIZE })
+      .search({ title: title || undefined, status: status || undefined, page: nextPage, size: PAGE_SIZE })
       .then((res) => {
         setAuctions((prev) => [...(prev ?? []), ...res.content]);
         setPage(nextPage);
         setHasNext(res.hasNext);
       })
       .finally(() => setLoadingMore(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingMore, hasNext, page, title, effectiveStatus]);
+  }, [loadingMore, hasNext, page, title, status]);
 
   // Fires once the card halfway through the currently loaded grid scrolls into the
   // viewport, so the next page arrives before the user reaches the actual bottom.
@@ -73,71 +84,67 @@ export default function BrowsePage() {
   }, [midpointEl, loadMore]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="border-b border-slate-200 pb-6">
-        <h1 className="font-display text-4xl font-semibold text-ink-950">
-          Live &amp; upcoming auctions
-        </h1>
-        <p className="mt-1 font-sans text-sm text-slate-500">
-          Bid with confidence: goods, vehicles, and real estate
-        </p>
-      </div>
-
-      <div className="sticky top-16 z-10 -mx-6 flex flex-wrap items-center gap-3 border-b border-slate-200 bg-paper-50 px-6 py-4">
-        <button
-          onClick={() => setLiveOnly((v) => !v)}
-          aria-pressed={liveOnly}
-          className={`flex min-h-9 items-center gap-1.5 rounded-full border px-4 font-sans text-sm font-semibold transition-colors ${liveOnly
-              ? "border-ledger-green bg-ledger-green text-white"
-              : "border-slate-200 bg-paper-100 text-ink-950"
-            }`}
-        >
-          <Zap className="h-4 w-4" />
-          Live now
-        </button>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Search auctions…"
-          className="min-h-9 flex-1 min-w-[200px] rounded-full border border-slate-200 bg-paper-100 px-4 font-sans text-sm text-ink-950 outline-none focus:border-2 focus:border-ink-950"
-        />
-        <select
-          value={status}
-          disabled={liveOnly}
-          onChange={(e) => setStatus(e.target.value as AuctionStatus | "")}
-          className="min-h-9 rounded-full border border-slate-200 bg-paper-100 px-4 font-sans text-sm text-ink-950 outline-none disabled:opacity-50"
-        >
-          <option value="">Any status</option>
-          <option value="UPCOMING">Upcoming</option>
-          <option value="LIVE">Live</option>
-          <option value="PAUSED">Paused</option>
-          <option value="CLOSED">Closed</option>
-        </select>
-      </div>
-
-      <div className="mt-8">
-        {auctions === null ? (
-          <p className="font-sans text-sm text-slate-500">Loading auctions…</p>
-        ) : auctions.length === 0 ? (
-          <EmptyState
-            title="No auctions found"
-            body="Try a different search or check back soon for new listings."
-          />
-        ) : (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title={
           <>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {auctions.map((a, i) => (
-                <div key={a.id} ref={i === midpointIndex ? setMidpointEl : undefined}>
-                  <AuctionCard auction={a} />
-                </div>
-              ))}
-            </div>
-            {loadingMore && (
-              <p className="py-6 text-center font-sans text-sm text-slate-500">Loading more…</p>
-            )}
+            Live &amp; upcoming <span className="font-serif text-[1.12em] font-normal italic">auctions</span>
           </>
-        )}
+        }
+        description="Bid with confidence on goods, vehicles, and real estate."
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Segmented label="Filter by status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+        <span className="text-sm text-muted">
+          {total === null ? (
+            "Loading…"
+          ) : (
+            <>
+              <span className="tabular-ticker text-fg">{total}</span>{" "}
+              {total === 1 ? "auction" : "auctions"}
+              {title && (
+                <>
+                  {" "}
+                  matching &ldquo;<span className="text-fg">{title}</span>&rdquo;
+                </>
+              )}
+            </>
+          )}
+        </span>
       </div>
+
+      {auctions === null ? (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-subtle" />
+          ))}
+        </div>
+      ) : auctions.length === 0 ? (
+        <EmptyState
+          title="No auctions found"
+          body="Try a different search or check back soon for new listings."
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {auctions.map((a, i) => (
+              <div key={a.id} ref={i === midpointIndex ? setMidpointEl : undefined}>
+                <AuctionCard auction={a} />
+              </div>
+            ))}
+          </div>
+          {loadingMore && <p className="py-4 text-center text-sm text-muted">Loading more…</p>}
+        </>
+      )}
     </div>
+  );
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={null}>
+      <BrowseContent />
+    </Suspense>
   );
 }

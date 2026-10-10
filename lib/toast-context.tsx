@@ -33,19 +33,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 sm:items-end">
         {toasts.map((t) => (
           <div
             key={t.id}
             role="status"
-            className={`w-full max-w-md rounded-lg px-5 py-3 text-center font-sans text-sm font-medium text-white shadow-lg animate-slide-up ${
-              t.variant === "success"
-                ? "bg-ledger-green"
-                : t.variant === "error"
-                  ? "bg-ledger-red"
-                  : "bg-ink-800"
-            }`}
+            className="pointer-events-auto flex w-full max-w-sm animate-slide-up items-center gap-2.5 rounded-xl bg-fg px-4 py-3 text-sm text-surface shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35)]"
           >
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                t.variant === "success" ? "bg-success" : t.variant === "error" ? "bg-danger" : "bg-accent"
+              }`}
+            />
             {t.message}
           </div>
         ))}

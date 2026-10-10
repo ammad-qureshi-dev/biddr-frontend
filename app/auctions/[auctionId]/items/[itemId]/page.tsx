@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, X, Ban } from "lucide-react";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { rememberItemAuction } from "@/lib/item-auction-cache";
@@ -16,6 +17,9 @@ import { BidList } from "../../../../components/domain/BidList";
 import { Button } from "../../../../components/ui/Button";
 import { Modal } from "../../../../components/ui/Modal";
 import { Textarea } from "../../../../components/ui/Input";
+import { Card } from "../../../../components/ui/Card";
+import { PageHeader } from "../../../../components/ui/PageHeader";
+import { AuctionStatusPill } from "../../../../components/domain/StatusPills";
 
 export default function ItemDetailPage() {
   const { auctionId, itemId } = useParams<{ auctionId: string; itemId: string }>();
@@ -45,9 +49,9 @@ export default function ItemDetailPage() {
 
   if (notFound) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-16 text-center font-sans text-sm text-slate-500">
+      <div className="py-16 text-center text-sm text-muted">
         Item not found.{" "}
-        <Link href={`/auctions/${auctionId}`} className="text-brass-600 hover:underline">
+        <Link href={`/auctions/${auctionId}`} className="font-medium text-fg underline">
           Back to auction
         </Link>
       </div>
@@ -55,7 +59,7 @@ export default function ItemDetailPage() {
   }
 
   if (!auction || !item) {
-    return <div className="mx-auto max-w-6xl px-6 py-16 font-sans text-sm text-slate-500">Loading…</div>;
+    return <div className="py-16 text-center text-sm text-muted">Loading…</div>;
   }
 
   const isOwner = user?.id === auction.ownerId;
@@ -136,7 +140,7 @@ export default function ItemDetailPage() {
   }
 
   const ownerActions = (canAccept || canReject) && (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-2">
       {canAccept && (
         <Button icon={Check} disabled={busy} onClick={handleAccept}>
           Accept bid
@@ -155,74 +159,82 @@ export default function ItemDetailPage() {
     </div>
   );
 
+  const facts: { label: string; value: React.ReactNode }[] = [
+    {
+      label: "Reserve price",
+      value: item.minimumPrice !== null ? formatMoney(item.minimumPrice) : <span className="text-faint">None</span>,
+    },
+    { label: "Auction starts", value: formatDateTime(auction.startTime) },
+    { label: "Auction ends", value: formatDateTime(auction.endTime) },
+    { label: "Bids shown", value: bids.length },
+  ];
+
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <Link href={`/auctions/${auctionId}`} className="font-sans text-xs text-slate-500 hover:text-brass-500">
-        ← {auction.title}
-      </Link>
-      <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[3fr_2fr]">
-        <div className="flex aspect-square items-center justify-center self-start rounded-2xl bg-paper-100">
-          <span className="font-display text-6xl text-slate-200">
-            {item.title.charAt(0).toUpperCase()}
-          </span>
-        </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        back={{ href: `/auctions/${auctionId}`, label: auction.title }}
+        meta={<AuctionStatusPill status={auction.auctionStatus} />}
+        title={item.title}
+      />
 
-        <div className="flex flex-col gap-6">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-ink-950">{item.title}</h1>
-            <p className="mt-2 font-sans text-sm text-slate-500">{item.description}</p>
-          </div>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="order-2 flex flex-col gap-6 lg:order-1">
+          <Card className="p-5">
+            <h2 className="text-[17px] font-semibold text-fg">Details</h2>
+            <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-muted">
+              {item.description || "No description provided."}
+            </p>
+            <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {facts.map((f) => (
+                <div key={f.label} className="rounded-xl bg-subtle px-4 py-3">
+                  <dt className="text-[13px] text-muted">{f.label}</dt>
+                  <dd className="tabular-ticker mt-0.5 text-[15px] font-medium text-fg">{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
 
-          <div className="rounded-2xl border border-slate-200 p-5">
-            {isLive && (
-              <div className="mb-4 flex items-center gap-1.5">
-                <span className="h-2 w-2 animate-pulse-urgent rounded-full bg-brass-500" />
-                <span className="font-sans text-xs font-semibold uppercase tracking-wide text-brass-500">
-                  Live now
-                </span>
-              </div>
-            )}
-            <BidAmountDisplay
-              amount={leadingAmount}
-              state={bidState}
-              bidCount={bids.length}
-              reserveMet={item.minimumPrice !== null ? leadingAmount !== null : undefined}
-            />
-            {(auction.auctionStatus === "LIVE" || auction.auctionStatus === "UPCOMING") && (
-              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
-                <span className="font-sans text-xs uppercase tracking-wide text-slate-500">
-                  {auction.auctionStatus === "LIVE" ? "Closes in" : "Starts in"}
-                </span>
-                <CountdownTimer
-                  target={auction.auctionStatus === "LIVE" ? auction.endTime : auction.startTime}
-                />
-              </div>
-            )}
-            {ownerActions && <div className="mt-4 border-t border-slate-200 pt-4">{ownerActions}</div>}
-            {canBid ? (
-              <div className="mt-4 border-t border-slate-200 pt-4">
-                <BidInput
-                  currentHighest={leadingAmount}
-                  minimumPrice={item.minimumPrice}
-                  onSubmit={handleBid}
-                />
-              </div>
-            ) : (
-              bidDisabledReason && (
-                <p className="mt-4 border-t border-slate-200 pt-4 font-sans text-sm text-slate-500">
-                  {bidDisabledReason}
-                </p>
-              )
-            )}
-          </div>
-
-          <div>
-            <h2 className="font-display text-lg font-semibold text-ink-950">Top bids</h2>
-            <div className="mt-3">
-              <BidList bids={bids} currentUserId={user?.id} />
+          <Card className="overflow-hidden">
+            <div className="flex items-baseline justify-between gap-3 border-b border-line px-5 pb-3 pt-5">
+              <h2 className="text-[17px] font-semibold text-fg">Top bids</h2>
+              <span className="text-[13px] text-muted">Highest 10</span>
             </div>
-          </div>
+            <BidList bids={bids} currentUserId={user?.id} />
+          </Card>
         </div>
+
+        <Card className="order-1 p-5 lg:sticky lg:top-28 lg:order-2">
+          {isLive && (
+            <div className="mb-4 flex items-center gap-1.5 text-[13px] text-fg">
+              <span className="h-1.5 w-1.5 animate-pulse-urgent rounded-full bg-success" />
+              Live now
+            </div>
+          )}
+          <BidAmountDisplay
+            amount={leadingAmount}
+            state={bidState}
+            bidCount={bids.length}
+            reserveMet={item.minimumPrice !== null ? leadingAmount !== null : undefined}
+          />
+          {(auction.auctionStatus === "LIVE" || auction.auctionStatus === "UPCOMING") && (
+            <div className="mt-5 flex items-center justify-between rounded-xl bg-subtle px-4 py-3">
+              <span className="text-[13px] text-muted">
+                {auction.auctionStatus === "LIVE" ? "Closes in" : "Starts in"}
+              </span>
+              <CountdownTimer target={auction.auctionStatus === "LIVE" ? auction.endTime : auction.startTime} />
+            </div>
+          )}
+          {ownerActions && <div className="mt-5 border-t border-line pt-5">{ownerActions}</div>}
+          {canBid ? (
+            <div className="mt-5 border-t border-line pt-5">
+              <BidInput currentHighest={leadingAmount} minimumPrice={item.minimumPrice} onSubmit={handleBid} />
+            </div>
+          ) : (
+            bidDisabledReason && (
+              <p className="mt-5 border-t border-line pt-5 text-sm text-muted">{bidDisabledReason}</p>
+            )
+          )}
+        </Card>
       </div>
 
       <RejectModal
@@ -261,8 +273,8 @@ function RejectModal({
         onChange={(e) => setReason(e.target.value)}
         placeholder="e.g. insufficient funds"
       />
-      <div className="mt-5 flex justify-end gap-3">
-        <Button variant="tertiary" icon={X} onClick={onClose}>
+      <div className="mt-6 flex justify-end gap-2">
+        <Button variant="secondary" icon={X} onClick={onClose}>
           Cancel
         </Button>
         <Button icon={Ban} disabled={busy || !reason.trim()} onClick={onConfirm}>

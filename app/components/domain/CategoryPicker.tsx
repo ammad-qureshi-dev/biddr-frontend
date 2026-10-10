@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { AUCTION_CATEGORIES, CATEGORY_LABELS, type AuctionCategory } from "@/lib/types";
 
 export function CategoryPicker({
@@ -16,28 +17,24 @@ export function CategoryPicker({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="font-sans text-[13px] text-slate-500">Categories</span>
-      <div className="flex flex-wrap gap-2">
-        {AUCTION_CATEGORIES.map((category) => {
-          const active = selected.includes(category);
-          return (
-            <button
-              key={category}
-              type="button"
-              onClick={() => toggle(category)}
-              aria-pressed={active}
-              className={`min-h-9 rounded-full border px-3 font-sans text-xs font-medium transition-colors ${
-                active
-                  ? "border-brass-500 bg-brass-500 text-white"
-                  : "border-slate-200 bg-paper-100 text-ink-950 hover:border-brass-500"
-              }`}
-            >
-              {CATEGORY_LABELS[category]}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap gap-2">
+      {AUCTION_CATEGORIES.map((category) => {
+        const active = selected.includes(category);
+        return (
+          <button
+            key={category}
+            type="button"
+            onClick={() => toggle(category)}
+            aria-pressed={active}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-[13px] transition-colors ${
+              active ? "border-fg bg-fg text-surface" : "border-line text-fg hover:bg-subtle"
+            }`}
+          >
+            {active && <Check className="h-3.5 w-3.5" />}
+            {CATEGORY_LABELS[category]}
+          </button>
+        );
+      })}
     </div>
   );
 }

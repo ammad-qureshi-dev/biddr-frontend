@@ -1,3 +1,4 @@
+import { Flag } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 
 type State = "default" | "winning" | "outbid";
@@ -8,60 +9,36 @@ export function BidAmountDisplay({
   label = "Current Bid",
   bidCount,
   reserveMet,
-  size = "md",
-  onDark = false,
 }: {
   amount: number | null;
   state?: State;
   label?: string;
   bidCount?: number;
   reserveMet?: boolean;
-  size?: "sm" | "md" | "lg";
-  onDark?: boolean;
 }) {
-  const colorClass =
-    state === "winning"
-      ? "text-ledger-green"
-      : state === "outbid"
-        ? "text-ledger-red"
-        : onDark
-          ? "text-paper-50"
-          : "text-ink-950";
-
-  const sizeClass = size === "lg" ? "text-5xl" : size === "sm" ? "text-lg" : "text-3xl";
+  const colorClass = state === "winning" ? "text-success" : state === "outbid" ? "text-danger" : "text-fg";
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <span
-        className={`font-sans text-[11px] font-semibold uppercase tracking-wider ${onDark ? "text-slate-200" : "text-slate-500"}`}
-      >
-        {label}
-      </span>
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[13px] text-muted">{label}</span>
       <span
         key={amount ?? "none"}
-        className={`tabular-ticker font-semibold animate-snap ${sizeClass} ${colorClass}`}
+        className={`tabular-ticker animate-snap text-[40px] font-semibold leading-none tracking-[-0.03em] ${colorClass}`}
       >
         {formatMoney(amount)}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
         {typeof bidCount === "number" && (
-          <span className={`font-sans text-xs ${onDark ? "text-slate-200" : "text-slate-500"}`}>
+          <span className="text-muted">
             {bidCount} {bidCount === 1 ? "bid" : "bids"}
           </span>
         )}
-        {state === "winning" && (
-          <span className="font-sans text-xs font-semibold text-ledger-green">
-            you&apos;re winning
-          </span>
-        )}
-        {state === "outbid" && (
-          <span className="font-sans text-xs font-semibold text-ledger-red">
-            outbid — bid again
-          </span>
-        )}
+        {state === "winning" && <span className="text-success">You&apos;re winning</span>}
+        {state === "outbid" && <span className="text-danger">Outbid — bid again</span>}
         {reserveMet === false && (
-          <span className="font-sans text-xs font-semibold text-ledger-red">
-            reserve not met
+          <span className="inline-flex items-center gap-1 text-danger">
+            <Flag className="h-3 w-3" />
+            Reserve not met
           </span>
         )}
       </div>

@@ -46,61 +46,54 @@ export function BidInput({
 
   return (
     <div className="flex flex-col gap-3">
+      <label htmlFor="bid-amount" className="text-[13px] text-muted">
+        Your bid
+      </label>
       <div className="flex items-center gap-2">
         <button
           type="button"
           aria-label="Decrease bid amount"
           onClick={() => setAmount((a) => Math.max(floor + step, a - step))}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-ink-950 hover:border-ink-950"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border border-line bg-surface text-fg hover:bg-subtle"
         >
           <Minus className="h-4 w-4" />
         </button>
         <input
+          id="bid-amount"
           type="number"
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
-          className="tabular-ticker h-11 w-full flex-1 rounded-xl border border-slate-200 bg-paper-50 px-3 text-center text-lg font-semibold text-ink-950 outline-none focus:border-2 focus:border-ink-950"
+          className="tabular-ticker h-12 w-full min-w-0 flex-1 rounded-[10px] border border-line bg-subtle px-3 text-center text-lg font-semibold text-fg outline-none focus:border-fg focus:bg-surface"
         />
         <button
           type="button"
           aria-label="Increase bid amount"
           onClick={() => setAmount((a) => a + step)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-ink-950 hover:border-ink-950"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border border-line bg-surface text-fg hover:bg-subtle"
         >
           <Plus className="h-4 w-4" />
         </button>
       </div>
-      <span className="font-sans text-xs text-slate-500">
+      <span className="text-xs text-muted">
         {minimumPrice !== null
           ? `Must be above the current bid and reserve of ${formatMoney(minimumPrice)}.`
-          : `Must be above the current bid of ${formatMoney(currentHighest)}.`}
+          : `Must be above the current bid of ${formatMoney(currentHighest)}.`}{" "}
+        Steps of <span className="tabular-ticker">{formatMoney(step)}</span>.
       </span>
-      {belowFloor && (
-        <span className="font-sans text-xs text-ledger-red">
-          Enter more than {formatMoney(floor)}.
-        </span>
-      )}
-      {disabled && disabledReason && (
-        <span className="font-sans text-xs text-slate-500">{disabledReason}</span>
-      )}
-      <Button
-        icon={Gavel}
-        disabled={disabled || belowFloor}
-        onClick={() => setConfirmOpen(true)}
-      >
+      {belowFloor && <span className="text-xs text-danger">Enter more than {formatMoney(floor)}.</span>}
+      {disabled && disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
+      <Button icon={Gavel} disabled={disabled || belowFloor} onClick={() => setConfirmOpen(true)} className="w-full">
         Place Bid
       </Button>
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Confirm your bid">
-        <p className="font-sans text-sm text-slate-500">
-          You&apos;re about to bid{" "}
-          <span className="tabular-ticker font-semibold text-ink-950">
-            {formatMoney(amount)}
-          </span>
-          . This can&apos;t be undone.
-        </p>
-        <div className="mt-5 flex justify-end gap-3">
-          <Button variant="tertiary" icon={X} onClick={() => setConfirmOpen(false)}>
+        <div className="rounded-xl bg-subtle p-4">
+          <span className="text-[13px] text-muted">Bid amount</span>
+          <p className="tabular-ticker mt-1 text-[28px] font-semibold leading-none text-fg">{formatMoney(amount)}</p>
+        </div>
+        <p className="mt-3 text-sm text-muted">This can&apos;t be undone.</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="secondary" icon={X} onClick={() => setConfirmOpen(false)}>
             Cancel
           </Button>
           <Button icon={Check} onClick={confirm} disabled={submitting}>

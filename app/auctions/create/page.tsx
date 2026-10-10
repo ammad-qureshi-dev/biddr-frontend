@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Gavel } from "lucide-react";
+import { Card, CardHeader } from "../../components/ui/Card";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, ItemRequest } from "@/lib/types";
@@ -71,31 +73,40 @@ export default function CreateAuctionPage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="font-display text-3xl font-semibold text-ink-950">Create an auction</h1>
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
-        <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <PageHeader
+        back={{ href: "/auctions/my-auctions", label: "My Auctions" }}
+        title="Create an auction"
+        description="Set the schedule, pick categories, and add the items you're selling."
+      />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <Card className="flex flex-col gap-5 p-5">
+          <CardHeader title="Details" description="The title and bidding window for this auction." />
+          <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DateTimeField id="startTime" label="Start time" value={startTime} onChange={setStartTime} />
+            <DateTimeField id="endTime" label="End time" value={endTime} onChange={setEndTime} />
+          </div>
+        </Card>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateTimeField id="startTime" label="Start time" value={startTime} onChange={setStartTime} />
-          <DateTimeField id="endTime" label="End time" value={endTime} onChange={setEndTime} />
-        </div>
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Categories" description="Help bidders find your auction." />
+          <CategoryPicker selected={categories} onChange={setCategories} />
+        </Card>
 
-        <CategoryPicker selected={categories} onChange={setCategories} />
-
-        <div className="flex flex-col gap-4">
-          <span className="font-sans text-[13px] text-slate-500">Items</span>
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Items" description="Every auction needs at least one item." />
           {items.map((item, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-paper-100 p-4">
+            <div key={i} className="flex flex-col gap-4 rounded-xl border border-line p-4">
               <div className="flex items-center justify-between">
-                <span className="font-sans text-xs font-semibold uppercase text-slate-500">
+                <span className="text-[13px] font-medium text-fg">
                   Item {i + 1}
                 </span>
                 {items.length > 1 && (
                   <button
                     type="button"
                     onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="flex items-center gap-1 font-sans text-xs text-ledger-red hover:underline"
+                    className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-danger hover:bg-danger-soft"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Remove
@@ -134,15 +145,18 @@ export default function CreateAuctionPage() {
             variant="secondary"
             icon={Plus}
             onClick={() => setItems((prev) => [...prev, emptyItem()])}
+            className="self-start"
           >
             Add another item
           </Button>
-        </div>
+        </Card>
 
-        {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" icon={Gavel} disabled={submitting}>
-          {submitting ? "Creating…" : "Create auction"}
-        </Button>
+        {error && <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
+        <div className="flex justify-end">
+          <Button type="submit" icon={Gavel} disabled={submitting}>
+            {submitting ? "Creating…" : "Create auction"}
+          </Button>
+        </div>
       </form>
     </div>
   );

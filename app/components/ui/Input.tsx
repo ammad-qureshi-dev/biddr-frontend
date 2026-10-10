@@ -6,7 +6,7 @@ type FieldWrapperProps = {
   hint?: string;
 };
 
-function FieldChrome({
+export function FieldChrome({
   label,
   error,
   hint,
@@ -15,25 +15,20 @@ function FieldChrome({
 }: FieldWrapperProps & { htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="font-sans text-[13px] text-slate-500">
+      <label htmlFor={htmlFor} className="text-[13px] text-muted">
         {label}
       </label>
       {children}
-      {hint && !error && (
-        <span className="font-sans text-xs text-slate-500">{hint}</span>
-      )}
-      {error && (
-        <span className="font-sans text-xs text-ledger-red">{error}</span>
-      )}
+      {hint && !error && <span className="text-xs text-muted">{hint}</span>}
+      {error && <span className="text-xs text-danger">{error}</span>}
     </div>
   );
 }
 
-const fieldClass =
-  "bg-paper-50 border border-slate-200 rounded-xl px-3.5 min-h-12 font-sans text-sm text-ink-950 outline-none focus:border-2 focus:border-ink-950 focus:px-[13px]";
+export const fieldClass =
+  "min-h-11 rounded-[10px] border border-line bg-surface px-3.5 font-sans text-sm text-fg outline-none transition-colors placeholder:text-faint hover:border-line-strong focus:border-fg";
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> &
-  FieldWrapperProps;
+type InputProps = InputHTMLAttributes<HTMLInputElement> & FieldWrapperProps;
 
 export function Input({ label, error, hint, id, className = "", ...props }: InputProps) {
   return (
@@ -43,17 +38,12 @@ export function Input({ label, error, hint, id, className = "", ...props }: Inpu
   );
 }
 
-type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> &
-  FieldWrapperProps;
+type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & FieldWrapperProps;
 
 export function Textarea({ label, error, hint, id, className = "", ...props }: TextareaProps) {
   return (
     <FieldChrome label={label} error={error} hint={hint} htmlFor={id!}>
-      <textarea
-        id={id}
-        className={`${fieldClass} min-h-24 py-2.5 resize-y ${className}`}
-        {...props}
-      />
+      <textarea id={id} className={`${fieldClass} min-h-24 resize-y py-2.5 ${className}`} {...props} />
     </FieldChrome>
   );
 }

@@ -37,12 +37,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-6 py-16">
-      <h1 className="font-display text-3xl font-semibold text-ink-950">Sign in</h1>
-      <p className="mt-1 font-sans text-sm text-slate-500">
-        Enter the auction room. Your paddle is waiting.
-      </p>
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+    <div>
+      <h1 className="text-2xl font-semibold text-fg">
+        Welcome <span className="font-serif text-[1.15em] font-normal italic">back</span>
+      </h1>
+      <p className="mt-1 text-sm text-muted">Enter the auction room. Your paddle is waiting.</p>
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <Input
           id="identifier"
           label="Email or phone number"
@@ -50,27 +50,30 @@ export default function LoginPage() {
           onChange={(e) => setIdentifier(e.target.value)}
           required
         />
-        <Input
-          id="password"
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" icon={LogIn} disabled={submitting}>
+        <div className="flex flex-col gap-1.5">
+          <Input
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Link href="/password/reset" className="self-end text-[13px] text-muted hover:text-fg">
+            Forgot password?
+          </Link>
+        </div>
+        {error && <p className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>}
+        <Button type="submit" icon={LogIn} disabled={submitting} className="mt-1">
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <div className="mt-6 flex justify-between font-sans text-sm">
-        <Link href="/password-reset" className="text-slate-500 hover:underline">
-          Forgot password?
-        </Link>
-        <Link href="/register" className="text-slate-500 hover:underline">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
+        New to Bidder?{" "}
+        <Link href="/register" className="font-medium text-fg hover:underline">
           Create an account
         </Link>
-      </div>
+      </p>
     </div>
   );
 }

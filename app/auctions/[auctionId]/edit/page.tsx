@@ -2,7 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Trash2, Plus, Save, Lock } from "lucide-react";
+import { Card, CardHeader } from "../../../components/ui/Card";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, AuctionResponse, ItemRequest } from "@/lib/types";
@@ -51,7 +53,7 @@ export default function EditAuctionPage() {
   }, [auction, user, auctionId, router]);
 
   if (!auction || !startTime || !endTime) {
-    return <div className="mx-auto max-w-2xl px-6 py-16 font-sans text-sm text-slate-500">Loading…</div>;
+    return <div className="py-16 text-center text-sm text-muted">Loading…</div>;
   }
 
   function updateNewItem(index: number, patch: Partial<ItemRequest>) {
@@ -89,60 +91,70 @@ export default function EditAuctionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="font-display text-3xl font-semibold text-ink-950">Edit auction</h1>
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
-        <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <PageHeader
+        back={{ href: `/auctions/${auctionId}`, label: auction.title }}
+        title="Edit auction"
+        description="Update the schedule and categories, or add more items."
+      />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <Card className="flex flex-col gap-5 p-5">
+          <CardHeader title="Details" description="The title and bidding window for this auction." />
+          <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateTimeField
-            id="startTime"
-            label="Start time"
-            value={startTime}
-            onChange={(d) => setStartTime(snapToQuarterHour(d))}
-          />
-          <DateTimeField
-            id="endTime"
-            label="End time"
-            value={endTime}
-            onChange={(d) => setEndTime(snapToQuarterHour(d))}
-          />
-        </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DateTimeField
+              id="startTime"
+              label="Start time"
+              value={startTime}
+              onChange={(d) => setStartTime(snapToQuarterHour(d))}
+            />
+            <DateTimeField
+              id="endTime"
+              label="End time"
+              value={endTime}
+              onChange={(d) => setEndTime(snapToQuarterHour(d))}
+            />
+          </div>
+        </Card>
 
-        <CategoryPicker selected={categories} onChange={setCategories} />
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Categories" description="Help bidders find your auction." />
+          <CategoryPicker selected={categories} onChange={setCategories} />
+        </Card>
 
-        <div className="flex flex-col gap-3">
-          <span className="font-sans text-[13px] text-slate-500">Existing items</span>
+        <Card className="overflow-hidden">
+          <div className="border-b border-line px-5 py-4">
+            <CardHeader title="Existing items" description="Existing items can't be edited or removed here." />
+          </div>
           {auction.items.map((it) => (
             <div
               key={it.id}
-              className="rounded-xl border border-slate-200 bg-paper-100 p-3 font-sans text-sm"
+              className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5 text-sm last:border-b-0"
             >
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-ink-950">{it.title}</span>
-                {it.minimumPrice !== null && (
-                  <span className="text-slate-500">Reserve {formatMoney(it.minimumPrice)}</span>
-                )}
-              </div>
-              <span className="text-xs text-slate-500">
-                Existing items can&apos;t be edited or removed here.
+              <span className="flex min-w-0 items-center gap-2 font-medium text-fg">
+                <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />
+                <span className="truncate">{it.title}</span>
               </span>
+              {it.minimumPrice !== null && (
+                <span className="tabular-ticker whitespace-nowrap text-muted">Reserve {formatMoney(it.minimumPrice)}</span>
+              )}
             </div>
           ))}
-        </div>
+        </Card>
 
-        <div className="flex flex-col gap-4">
-          <span className="font-sans text-[13px] text-slate-500">Add new items</span>
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Add new items" description="New items are appended to this auction." />
           {newItems.map((item, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-paper-100 p-4">
+            <div key={i} className="flex flex-col gap-4 rounded-xl border border-line p-4">
               <div className="flex items-center justify-between">
-                <span className="font-sans text-xs font-semibold uppercase text-slate-500">
+                <span className="text-[13px] font-medium text-fg">
                   New item {i + 1}
                 </span>
                 <button
                   type="button"
                   onClick={() => setNewItems((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="flex items-center gap-1 font-sans text-xs text-ledger-red hover:underline"
+                  className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-danger hover:bg-danger-soft"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Remove
@@ -179,15 +191,18 @@ export default function EditAuctionPage() {
             variant="secondary"
             icon={Plus}
             onClick={() => setNewItems((prev) => [...prev, emptyItem()])}
+            className="self-start"
           >
             Add item
           </Button>
-        </div>
+        </Card>
 
-        {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" icon={Save} disabled={submitting}>
-          {submitting ? "Saving…" : "Save changes"}
-        </Button>
+        {error && <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
+        <div className="flex justify-end">
+          <Button type="submit" icon={Save} disabled={submitting}>
+            {submitting ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
       </form>
     </div>
   );

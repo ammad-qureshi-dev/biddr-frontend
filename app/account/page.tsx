@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MailCheck, Save, Mail, MessageSquare, LogOut } from "lucide-react";
+import { BadgeCheck, MailCheck, Save, Mail, MessageSquare, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { appUserApi, authApi, ApiError } from "@/lib/api";
@@ -10,8 +10,41 @@ import type { ContactType, PreferredContactMethod } from "@/lib/types";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
+import { Avatar } from "../components/ui/Avatar";
+import { Card } from "../components/ui/Card";
+import type { ReactNode } from "react";
 
 const NOT_APPLICABLE = "N/A";
+
+/** Settings row: title + description on the left, controls on the right (stacked on mobile). */
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="grid grid-cols-1 gap-5 p-5 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 md:p-6">
+      <div>
+        <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
+        <p className="mt-1 text-sm text-muted">{description}</p>
+      </div>
+      <div className="flex flex-col gap-4">{children}</div>
+    </Card>
+  );
+}
+
+function ContactRow({ label, value }: { label: string; value: string | undefined }) {
+  return (
+    <div className="min-w-0 rounded-xl bg-subtle px-4 py-3">
+      <dt className="text-[13px] text-muted">{label}</dt>
+      <dd className="mt-0.5 truncate text-[15px] text-fg">{value ?? "…"}</dd>
+    </div>
+  );
+}
 
 export default function AccountPage() {
   const { user, loading, logout } = useAuth();
@@ -101,97 +134,89 @@ export default function AccountPage() {
       : !contacts?.PHONE || contacts.PHONE === NOT_APPLICABLE;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <div className="flex items-center gap-3">
-        <span className="font-sans text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Account
-        </span>
-        {verified === true && (
-          <span title="Account is verified" className="text-ledger-green">
-            ✓
-          </span>
-        )}
-        {verified === false && (
-          <span
-            title="Account is not verified, please verify"
-            className="rounded-full border border-ledger-red px-2 py-0.5 font-sans text-[11px] font-semibold uppercase text-ledger-red"
-          >
-            Not Verified
-          </span>
-        )}
-      </div>
-      <h1 className="mt-1 font-display text-3xl font-semibold text-ink-950">{user.fullName}</h1>
+    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-5 md:p-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar name={user.fullName} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-muted">Account</span>
+              {verified === true && (
+                <span title="Account is verified" className="text-success">
+                  <BadgeCheck className="h-4 w-4" aria-label="Account is verified" />
+                </span>
+              )}
+              {verified === false && (
+                <span
+                  title="Account is not verified, please verify"
+                  className="rounded-md bg-danger-soft px-1.5 py-0.5 text-xs text-danger"
+                >
+                  Not Verified
+                </span>
+              )}
+            </div>
+            <h1 className="mt-0.5 truncate text-2xl font-semibold text-fg">{user.fullName}</h1>
+          </div>
+        </div>
+        <Button variant="secondary" icon={LogOut} onClick={() => logout().then(() => router.push("/"))}>
+          Log out
+        </Button>
+      </Card>
 
       {verified === false && (
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
-          <h2 className="font-display text-lg font-semibold text-ink-950">
-            Verify your account
-          </h2>
-          <p className="mt-1 font-sans text-sm text-slate-500">
-            We&apos;ll email a verification link to your registered address.
-          </p>
-          <Button className="mt-4" icon={MailCheck} onClick={handleSendVerification} disabled={busy}>
-            Send verification link
-          </Button>
-        </section>
+        <SettingsSection
+          title="Verify your account"
+          description="We'll email a verification link to your registered address."
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">Verification confirms you own this email address.</p>
+            <Button icon={MailCheck} onClick={handleSendVerification} disabled={busy}>
+              Send verification link
+            </Button>
+          </div>
+        </SettingsSection>
       )}
 
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
-        <h2 className="font-display text-lg font-semibold text-ink-950">Contact methods</h2>
-        <dl className="mt-3 flex flex-col gap-2 font-sans text-sm">
-          <div className="flex items-center justify-between">
-            <dt className="text-slate-500">Email</dt>
-            <dd className="text-ink-950">{contacts?.EMAIL ?? "…"}</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-slate-500">Phone</dt>
-            <dd className="text-ink-950">{contacts?.PHONE ?? "…"}</dd>
-          </div>
+      <SettingsSection title="Contact methods" description="The email and phone number on file for your account.">
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ContactRow label="Email" value={contacts?.EMAIL} />
+          <ContactRow label="Phone" value={contacts?.PHONE} />
         </dl>
-      </section>
+      </SettingsSection>
 
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
-        <h2 className="font-display text-lg font-semibold text-ink-950">
-          Preferred contact method
-        </h2>
-        <p className="mt-1 font-sans text-sm text-slate-500">
-          Used as your default channel for bid updates and account notifications.
-        </p>
-        <div className="mt-4 flex flex-col gap-3">
-          <Select
-            id="preferredChoice"
-            label="Channel"
-            value={preferredChoice}
-            onChange={(e) => setPreferredChoice(e.target.value as ContactType)}
-          >
-            <option value="EMAIL">Email</option>
-            <option value="PHONE">Phone</option>
-          </Select>
-          {preferredNeedsValue && (
-            <Input
-              id="newContactValue"
-              label={preferredChoice === "EMAIL" ? "Email address" : "Phone number"}
-              value={newContactValue}
-              onChange={(e) => setNewContactValue(e.target.value)}
-            />
-          )}
-          <Button icon={Save} onClick={handleSetPreferred} disabled={busy}>
+      <SettingsSection
+        title="Preferred contact method"
+        description="Used as your default channel for bid updates and account notifications."
+      >
+        <Select
+          id="preferredChoice"
+          label="Channel"
+          value={preferredChoice}
+          onChange={(e) => setPreferredChoice(e.target.value as ContactType)}
+        >
+          <option value="EMAIL">Email</option>
+          <option value="PHONE">Phone</option>
+        </Select>
+        {preferredNeedsValue && (
+          <Input
+            id="newContactValue"
+            label={preferredChoice === "EMAIL" ? "Email address" : "Phone number"}
+            value={newContactValue}
+            onChange={(e) => setNewContactValue(e.target.value)}
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-xs text-muted">
+            {preferred?.type && <>Currently: {preferred.type === "EMAIL" ? "Email" : "Phone"} ({preferred.value})</>}
+          </span>
+          <Button icon={Save} variant="secondary" onClick={handleSetPreferred} disabled={busy}>
             Save preference
           </Button>
-          {preferred?.type && (
-            <span className="font-sans text-xs text-slate-500">
-              Currently: {preferred.type === "EMAIL" ? "Email" : "Phone"} ({preferred.value})
-            </span>
-          )}
         </div>
-      </section>
+      </SettingsSection>
 
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-paper-100 p-5">
-        <h2 className="font-display text-lg font-semibold text-ink-950">Password</h2>
-        <p className="mt-1 font-sans text-sm text-slate-500">
-          We&apos;ll send a reset link to your email or phone.
-        </p>
-        <div className="mt-4 flex gap-3">
+      <SettingsSection title="Password" description="We'll send a reset link to your email or phone.">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
             icon={Mail}
@@ -209,16 +234,7 @@ export default function AccountPage() {
             Text me a link
           </Button>
         </div>
-      </section>
-
-      <Button
-        variant="tertiary"
-        icon={LogOut}
-        className="mt-8"
-        onClick={() => logout().then(() => router.push("/"))}
-      >
-        Log out
-      </Button>
+      </SettingsSection>
     </div>
   );
 }

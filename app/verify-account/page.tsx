@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { User, RefreshCw } from "lucide-react";
 import { authApi, ApiError } from "@/lib/api";
-import { Button } from "../components/ui/Button";
+import { LinkButton } from "../components/ui/Button";
 
 function VerifyAccountContent() {
   const token = useSearchParams().get("token");
@@ -28,32 +27,26 @@ function VerifyAccountContent() {
   }, [token]);
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-6 py-16 text-center">
+    <div className="flex flex-col items-center text-center">
       {status === "pending" && (
-        <p className="font-sans text-sm text-slate-500">Verifying your account…</p>
+        <p className="text-sm text-muted">Verifying your account…</p>
       )}
       {status === "success" && (
         <>
-          <h1 className="font-display text-3xl font-semibold text-ledger-green">
-            Account verified
-          </h1>
-          <p className="mt-2 font-sans text-sm text-slate-500">
-            You&apos;re all set. Head back to your account.
-          </p>
-          <Link href="/account" className="mt-6">
-            <Button icon={User}>Go to account</Button>
-          </Link>
+          <h1 className="text-2xl font-semibold text-fg">Account verified</h1>
+          <p className="mt-1 text-sm text-muted">You&apos;re all set. Head back to your account.</p>
+          <LinkButton href="/account" icon={User} className="mt-6 w-full">
+            Go to account
+          </LinkButton>
         </>
       )}
       {status === "error" && (
         <>
-          <h1 className="font-display text-3xl font-semibold text-ledger-red">
-            Verification failed
-          </h1>
-          <p className="mt-2 font-sans text-sm text-slate-500">{error}</p>
-          <Link href="/account" className="mt-6">
-            <Button variant="secondary" icon={RefreshCw}>Request a new link</Button>
-          </Link>
+          <h1 className="text-2xl font-semibold text-fg">Verification failed</h1>
+          <p className="mt-1 text-sm text-muted">{error}</p>
+          <LinkButton href="/account" variant="secondary" icon={RefreshCw} className="mt-6 w-full">
+            Request a new link
+          </LinkButton>
         </>
       )}
     </div>

@@ -6,29 +6,21 @@ export function CountdownTimer({
   target,
   size = "md",
   expiredLabel = "Ended",
-  onDark = false,
 }: {
   target: string;
   size?: "sm" | "md" | "lg";
   expiredLabel?: string;
-  onDark?: boolean;
 }) {
   const countdown = useCountdown(target);
   if (!countdown) return null;
 
+  const sizeClass = size === "lg" ? "text-[28px] leading-none" : size === "sm" ? "text-[13px]" : "text-lg";
+
   if (countdown.isExpired) {
-    return (
-      <span className="tabular-ticker text-slate-500">{expiredLabel}</span>
-    );
+    return <span className={`tabular-ticker font-medium text-muted ${sizeClass}`}>{expiredLabel}</span>;
   }
 
-  const sizeClass =
-    size === "lg" ? "text-5xl" : size === "sm" ? "text-sm" : "text-xl";
-  const urgentClass = countdown.isUnderFiveMinutes
-    ? "text-ledger-red animate-pulse-urgent"
-    : onDark
-      ? "text-paper-50"
-      : "text-ink-950";
+  const urgentClass = countdown.isUnderFiveMinutes ? "text-danger animate-pulse-urgent" : "text-fg";
 
   return (
     <span
@@ -36,9 +28,7 @@ export function CountdownTimer({
       aria-label={`${countdown.hh} hours ${countdown.mm} minutes ${countdown.ss} seconds remaining`}
     >
       {countdown.hh}:{countdown.mm}:
-      <span className={countdown.isUnderOneMinute ? "font-bold" : ""}>
-        {countdown.ss}
-      </span>
+      <span className={countdown.isUnderOneMinute ? "font-bold" : ""}>{countdown.ss}</span>
     </span>
   );
 }

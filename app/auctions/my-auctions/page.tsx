@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi } from "@/lib/api";
 import type { AuctionSummaryResponse } from "@/lib/types";
-import { AuctionCard } from "../../components/domain/AuctionCard";
+import { AuctionTable } from "../../components/domain/AuctionTable";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Card } from "../../components/ui/Card";
+import { LinkButton } from "../../components/ui/Button";
+import { PageHeader } from "../../components/ui/PageHeader";
 
 const PAGE_SIZE = 25;
 
@@ -16,6 +18,7 @@ export default function MyAuctionsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [auctions, setAuctions] = useState<AuctionSummaryResponse[] | null>(null);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,6 +33,7 @@ export default function MyAuctionsPage() {
       .getMyAuctions({ page: 0, size: PAGE_SIZE })
       .then((res) => {
         setAuctions(res.content);
+        setTotal(res.totalElements);
         setPage(0);
         setHasNext(res.hasNext);
       })
@@ -53,9 +57,9 @@ export default function MyAuctionsPage() {
       .finally(() => setLoadingMore(false));
   }, [loadingMore, hasNext, page]);
 
-  // Fires once the card halfway through the currently loaded grid scrolls into the
+  // Fires once the row halfway through the currently loaded table scrolls into the
   // viewport, so the next page arrives before the user reaches the actual bottom.
-  const [midpointEl, setMidpointEl] = useState<HTMLDivElement | null>(null);
+  const [midpointEl, setMidpointEl] = useState<HTMLTableRowElement | null>(null);
   const midpointIndex = auctions ? Math.floor(auctions.length / 2) : -1;
 
   useEffect(() => {
@@ -70,43 +74,37 @@ export default function MyAuctionsPage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-6">
-        <h1 className="font-display text-3xl font-semibold text-ink-950">My Auctions</h1>
-        <Link
-          href="/auctions/create"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brass-500 px-5 font-sans text-sm font-semibold text-white hover:bg-brass-600"
-        >
-          <Plus className="h-4 w-4" />
-          Create Auction
-        </Link>
-      </div>
-      <div className="mt-8">
-        {auctions === null ? (
-          <p className="font-sans text-sm text-slate-500">Loading…</p>
-        ) : auctions.length === 0 ? (
-          <EmptyState
-            title="You haven't created any auctions yet"
-            body="List your first item and start collecting bids."
-            actionLabel="Create an auction"
-            actionHref="/auctions/create"
-            actionIcon={Plus}
-          />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {auctions.map((a, i) => (
-                <div key={a.id} ref={i === midpointIndex ? setMidpointEl : undefined}>
-                  <AuctionCard auction={a} />
-                </div>
-              ))}
-            </div>
-            {loadingMore && (
-              <p className="py-6 text-center font-sans text-sm text-slate-500">Loading more…</p>
-            )}
-          </>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="My Auctions"
+        description="Auctions you've created and manage."
+        actions={
+          <LinkButton href="/auctions/create" icon={Plus}>
+            Create Auction
+          </LinkButton>
+        }
+      />
+
+      {auctions === null ? (
+        <Card className="px-5 py-8 text-center text-sm text-muted">Loading…</Card>
+      ) : auctions.length === 0 ? (
+        <EmptyState
+          title="You haven't created any auctions yet"
+          body="List your first item and start collecting bids."
+          actionLabel="Create an auction"
+          actionHref="/auctions/create"
+          actionIcon={Plus}
+        />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="flex items-baseline justify-between gap-3 border-b border-line px-5 pb-3 pt-5">
+            <h2 className="text-[17px] font-semibold text-fg">All auctions</h2>
+            <span className="tabular-ticker text-[13px] text-muted">{total} total</span>
+          </div>
+          <AuctionTable auctions={auctions} rowRef={{ index: midpointIndex, ref: setMidpointEl }} />
+          {loadingMore && <p className="border-t border-line py-3 text-center text-sm text-muted">Loading more…</p>}
+        </Card>
+      )}
     </div>
   );
 }

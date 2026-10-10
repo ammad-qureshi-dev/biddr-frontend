@@ -9,17 +9,17 @@ export function AuctionStatusPill({
   endingSoon?: boolean;
 }) {
   if (status === "LIVE" && endingSoon) {
-    return <StatusPill label="Ending Soon" tone="red" />;
+    return <StatusPill label="Ending soon" tone="danger" />;
   }
   switch (status) {
     case "LIVE":
-      return <StatusPill label="Live" tone="green" />;
+      return <StatusPill label="Live" tone="success" />;
     case "UPCOMING":
-      return <StatusPill label="Upcoming" tone="slate" />;
+      return <StatusPill label="Upcoming" tone="info" />;
     case "PAUSED":
-      return <StatusPill label="Paused" tone="slate" />;
+      return <StatusPill label="Paused" tone="warning" />;
     case "CLOSED":
-      return <StatusPill label="Closed" tone="ink" />;
+      return <StatusPill label="Closed" tone="neutral" />;
   }
 }
 
@@ -36,33 +36,29 @@ export function BidStatusPill({ status }: { status: BidStatus }) {
   const label = BID_STATUS_LABEL[status];
   switch (status) {
     case "ACTIVE":
-      return <StatusPill label={label} tone="green" />;
+      return <StatusPill label={label} tone="success" />;
     case "WINNER":
-      return <StatusPill label={label} tone="green" />;
+      return <StatusPill label={label} tone="info" />;
     case "OUTBID":
-      return <StatusPill label={label} tone="red" />;
+      return <StatusPill label={label} tone="danger" />;
     case "REJECTED":
-      return <StatusPill label={label} tone="red-outline" />;
+      return <StatusPill label={label} tone="danger" />;
     default:
-      return <StatusPill label={label} tone="slate" />;
+      return <StatusPill label={label} tone="neutral" />;
   }
 }
 
 export function NotificationStatusPill({ status }: { status: NotificationStatus }) {
   switch (status) {
     case "SENT":
-      return <StatusPill label="Sent" tone="slate" />;
+      return <StatusPill label="Sent" tone="info" />;
     case "OPENED":
-      return <StatusPill label="Opened" tone="ink" />;
+      return <StatusPill label="Opened" tone="neutral" />;
     case "FAILED_TO_SEND":
-      return <StatusPill label="Failed to Send" tone="red" />;
+      return <StatusPill label="Failed to send" tone="danger" />;
   }
 }
 
 export function ItemSoldBadge() {
-  return <StatusPill label="Sold" tone="ink" />;
-}
-
-export function ReserveNotMetBadge() {
-  return <StatusPill label="Reserve Not Met" tone="red-outline" />;
+  return <StatusPill label="Sold" tone="neutral" />;
 }

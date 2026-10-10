@@ -1,4 +1,5 @@
 import { snapToQuarterHour, toLocalDateTimeInputValue } from "@/lib/format";
+import { FieldChrome, fieldClass } from "./Input";
 
 export function DateTimeField({
   label,
@@ -14,10 +15,7 @@ export function DateTimeField({
   id: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="font-sans text-[13px] text-slate-500">
-        {label}
-      </label>
+    <FieldChrome label={label} error={error} hint="15-minute increments only." htmlFor={id}>
       <input
         id={id}
         type="datetime-local"
@@ -31,10 +29,8 @@ export function DateTimeField({
           if (!e.target.value) return;
           onChange(snapToQuarterHour(new Date(e.target.value)));
         }}
-        className="tabular-ticker min-h-12 rounded-xl border border-slate-200 bg-paper-50 px-3.5 text-sm text-ink-950 outline-none focus:border-2 focus:border-ink-950"
+        className={`tabular-ticker ${fieldClass}`}
       />
-      <span className="font-sans text-xs text-slate-500">15-minute increments only.</span>
-      {error && <span className="font-sans text-xs text-ledger-red">{error}</span>}
-    </div>
+    </FieldChrome>
   );
 }

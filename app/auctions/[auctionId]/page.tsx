@@ -3,19 +3,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Pencil, Play, Pause, Lock, X, Search } from "lucide-react";
+import { ChevronRight, Lock, Pause, Pencil, Play, Search, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionResponse, AuctionStatus, ItemSummaryResponse } from "@/lib/types";
 import { CATEGORY_LABELS } from "@/lib/types";
-import { formatDateTime } from "@/lib/format";
-import { AuctionStatusPill } from "../../components/domain/StatusPills";
+import { formatDateTime, formatMoney } from "@/lib/format";
+import { AuctionStatusPill, ItemSoldBadge } from "../../components/domain/StatusPills";
 import { CountdownTimer } from "../../components/domain/CountdownTimer";
-import { ItemCard } from "../../components/domain/ItemCard";
-import { Button } from "../../components/ui/Button";
+import { Button, LinkButton } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Card } from "../../components/ui/Card";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { rememberItemAuction } from "@/lib/item-auction-cache";
 
 const NEXT_STATUS: Record<AuctionStatus, AuctionStatus[]> = {
@@ -36,6 +37,16 @@ const STATUS_ICON: Partial<Record<AuctionStatus, typeof Play>> = {
   LIVE: Play,
   PAUSED: Pause,
 };
+
+/** One cell of the compact auction summary strip: label over a single-line value. */
+function SummaryItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="min-w-0 bg-surface px-5 py-3.5">
+      <p className="text-[13px] text-muted">{label}</p>
+      <p className="tabular-ticker mt-0.5 truncate text-[15px] font-medium text-fg">{value}</p>
+    </div>
+  );
+}
 
 export default function AuctionDetailPage() {
   const { auctionId } = useParams<{ auctionId: string }>();
@@ -66,7 +77,7 @@ export default function AuctionDetailPage() {
 
   if (notFound) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-16">
+      <div className="py-6">
         <EmptyState
           title="Auction not found"
           body="This auction may have been removed or the link is incorrect."
@@ -79,7 +90,7 @@ export default function AuctionDetailPage() {
   }
 
   if (!auction || !items) {
-    return <div className="mx-auto max-w-6xl px-6 py-16 font-sans text-sm text-slate-500">Loading…</div>;
+    return <div className="py-16 text-center text-sm text-muted">Loading…</div>;
   }
 
   const isOwner = user?.id === auction.ownerId;
@@ -98,98 +109,152 @@ export default function AuctionDetailPage() {
     }
   }
 
+  const isRunning = auction.auctionStatus === "LIVE" || auction.auctionStatus === "UPCOMING";
+
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        back={{ href: "/", label: "All auctions" }}
+        meta={
+          <>
             <AuctionStatusPill status={auction.auctionStatus} />
-            <span className="font-sans text-xs uppercase tracking-wide text-slate-500">
-              {formatDateTime(auction.startTime)} — {formatDateTime(auction.endTime)}
-            </span>
-          </div>
-          <h1 className="mt-2 font-display text-4xl font-semibold text-ink-950">{auction.title}</h1>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {auction.categories.map((c) => (
-              <span
-                key={c}
-                className="rounded-full bg-slate-200/60 px-2.5 py-0.5 font-sans text-xs text-slate-500"
-              >
-                {CATEGORY_LABELS[c]}
+            {auction.categories.length > 0 && (
+              <span className="text-[13px] text-muted">
+                {auction.categories.map((c) => CATEGORY_LABELS[c]).join(", ")}
               </span>
-            ))}
-          </div>
-        </div>
+            )}
+          </>
+        }
+        title={auction.title}
+        actions={
+          isOwner &&
+          auction.auctionStatus !== "CLOSED" && (
+            <>
+              <LinkButton href={`/auctions/${auctionId}/edit`} variant="secondary" icon={Pencil}>
+                Edit
+              </LinkButton>
+              {NEXT_STATUS[auction.auctionStatus].map((status) =>
+                status === "CLOSED" ? (
+                  <Button
+                    key={status}
+                    variant="secondary"
+                    icon={Lock}
+                    disabled={busy}
+                    onClick={() => setConfirmClose(true)}
+                  >
+                    Close auction
+                  </Button>
+                ) : (
+                  <Button
+                    key={status}
+                    variant="secondary"
+                    icon={STATUS_ICON[status]}
+                    disabled={busy}
+                    onClick={() => changeStatus(status)}
+                  >
+                    Mark {STATUS_LABEL[status]}
+                  </Button>
+                ),
+              )}
+            </>
+          )
+        }
+      />
 
-        {(auction.auctionStatus === "LIVE" || auction.auctionStatus === "UPCOMING") && (
-          <div className="flex flex-col items-end gap-1">
-            <span className="font-sans text-xs uppercase tracking-wide text-slate-500">
-              {auction.auctionStatus === "LIVE" ? "Closes in" : "Starts in"}
-            </span>
-            <CountdownTimer
-              target={auction.auctionStatus === "LIVE" ? auction.endTime : auction.startTime}
-              size="lg"
-            />
-          </div>
+      {/* 1px gaps over a `line` background draw the dividers between cells at any column count. */}
+      <Card
+        className={`grid gap-px overflow-hidden bg-line ${isRunning ? "grid-cols-2 md:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"}`}
+      >
+        {/* Status is already shown above the title, so the first cell only appears when there's a countdown. */}
+        {isRunning && (
+          <SummaryItem
+            label={auction.auctionStatus === "LIVE" ? "Closes in" : "Starts in"}
+            value={
+              <CountdownTimer
+                target={auction.auctionStatus === "LIVE" ? auction.endTime : auction.startTime}
+                size="sm"
+              />
+            }
+          />
         )}
-      </div>
+        <SummaryItem
+          label="Items"
+          value={
+            <>
+              {items.length}
+              <span className="font-normal text-muted"> · {items.filter((it) => it.sold).length} sold</span>
+            </>
+          }
+        />
+        <SummaryItem label="Starts" value={formatDateTime(auction.startTime)} />
+        <SummaryItem label="Ends" value={formatDateTime(auction.endTime)} />
+      </Card>
 
-      {isOwner && auction.auctionStatus !== "CLOSED" && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-paper-100 px-4 py-3">
-          <span className="font-sans text-xs font-semibold uppercase text-slate-500">
-            Owner controls
-          </span>
-          <Link href={`/auctions/${auctionId}/edit`}>
-            <Button variant="secondary" icon={Pencil}>
-              Edit
-            </Button>
-          </Link>
-          {NEXT_STATUS[auction.auctionStatus].map((status) =>
-            status === "CLOSED" ? (
-              <Button
-                key={status}
-                variant="secondary"
-                icon={Lock}
-                disabled={busy}
-                onClick={() => setConfirmClose(true)}
-              >
-                Close auction
-              </Button>
-            ) : (
-              <Button
-                key={status}
-                variant="secondary"
-                icon={STATUS_ICON[status]}
-                disabled={busy}
-                onClick={() => changeStatus(status)}
-              >
-                Mark {STATUS_LABEL[status]}
-              </Button>
-            ),
-          )}
+      <Card className="overflow-hidden">
+        <div className="px-5 pb-3 pt-5">
+          <h2 className="text-[17px] font-semibold text-fg">Items</h2>
         </div>
-      )}
-
-      <div className="mt-10">
-        <h2 className="font-display text-2xl font-semibold text-ink-950">Items</h2>
         {items.length === 0 ? (
-          <EmptyState title="No items yet" body="This auction has no items." />
+          <div className="p-5">
+            <EmptyState title="No items yet" body="This auction has no items." />
+          </div>
         ) : (
-          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
-              <ItemCard key={item.id} item={item} auctionId={auctionId} />
-            ))}
+          <div className="relative overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-y border-line text-left text-[13px] text-muted">
+                  <th className="px-5 py-2.5 font-normal">Item</th>
+                  <th className="px-3 py-2.5 text-right font-normal">Reserve</th>
+                  <th className="px-3 py-2.5 font-normal">Status</th>
+                  <th className="w-10 px-3 py-3">
+                    <span className="sr-only">Open</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const href = `/auctions/${auctionId}/items/${item.id}`;
+                  return (
+                    <tr
+                      key={item.id}
+                      onClick={() => router.push(href)}
+                      className="cursor-pointer border-b border-line last:border-b-0 hover:bg-subtle"
+                    >
+                      <td className="px-5 py-3.5">
+                        <Link
+                          href={href}
+                          onClick={(e) => e.stopPropagation()}
+                          className="block truncate font-medium text-fg hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+                        <span className="line-clamp-1 text-[13px] text-muted">{item.description}</span>
+                      </td>
+                      <td className="tabular-ticker whitespace-nowrap px-3 py-3.5 text-right text-fg">
+                        {item.minimumPrice !== null ? formatMoney(item.minimumPrice) : <span className="text-faint">None</span>}
+                      </td>
+                      <td className="px-3 py-3.5">
+                        {item.sold ? <ItemSoldBadge /> : <span className="text-[13px] text-muted">Open</span>}
+                      </td>
+                      <td className="px-3 py-3.5 text-faint">
+                        <ChevronRight className="h-4 w-4" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </Card>
 
       <Modal open={confirmClose} onClose={() => setConfirmClose(false)} title="Close this auction?">
-        <p className="font-sans text-sm text-slate-500">
+        <p className="text-sm text-muted">
           This finalizes the highest bid on every item and notifies the winners. This can&apos;t be
           undone.
         </p>
-        <div className="mt-5 flex justify-end gap-3">
-          <Button variant="tertiary" icon={X} onClick={() => setConfirmClose(false)}>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="secondary" icon={X} onClick={() => setConfirmClose(false)}>
             Cancel
           </Button>
           <Button icon={Lock} disabled={busy} onClick={() => changeStatus("CLOSED")}>

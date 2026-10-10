@@ -15,21 +15,18 @@ function timeLabel(iso: string) {
 }
 
 /**
- * Renders bid activity either as a compact light table (item detail) or a dark live ticker
- * (auction room). No bidder identity is ever shown — rows are anonymous — but the viewer's own
+ * Bid activity table. No bidder identity is ever shown — rows are anonymous — but the viewer's own
  * bid (matched via `currentUserId`) is highlighted so they can spot it in the ranking. Bids are
  * rendered in the order given — callers pass already-ranked data (e.g. the top-ten-bids endpoint
- * ranks by amount descending), so this doesn't re-sort. In the table variant, a row with a
- * `statusDescription` (e.g. a rejection reason) gets a chevron that expands to show it.
+ * ranks by amount descending), so this doesn't re-sort. A row with a `statusDescription` (e.g. a
+ * rejection reason) gets a chevron that expands to show it.
  */
 export function BidList({
   bids: sorted,
   currentUserId,
-  variant = "table",
 }: {
   bids: BidSummaryResponse[];
   currentUserId?: string;
-  variant?: "table" | "ticker";
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -43,94 +40,55 @@ export function BidList({
   }
 
   if (sorted.length === 0) {
-    return (
-      <p
-        className={`font-sans text-sm ${variant === "ticker" ? "text-slate-200" : "text-slate-500"}`}
-      >
-        No bids yet — be the first.
-      </p>
-    );
-  }
-
-  if (variant === "ticker") {
-    return (
-      <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
-        {sorted.map((bid) => {
-          const isMine = !!currentUserId && bid.bidderId === currentUserId;
-          return (
-            <div
-              key={bid.id}
-              className={`animate-slide-down flex items-center justify-between border-b border-l-2 border-slate-700 pb-2 pl-2 ${
-                isMine ? "border-l-brass-500 bg-brass-500/10" : "border-l-transparent"
-              }`}
-            >
-              <span className="tabular-ticker text-xs text-slate-200">
-                {timeLabel(bid.placedAt)}
-              </span>
-              <span className="tabular-ticker text-base font-semibold text-paper-50">
-                {formatMoney(bid.amount)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
+    return <p className="px-5 py-8 text-center text-sm text-muted">No bids yet — be the first.</p>;
   }
 
   return (
-    <div className="max-h-96 overflow-y-auto">
-      <table className="w-full border-collapse font-sans text-sm">
+    <div className="max-h-[28rem] overflow-y-auto">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="sticky top-0 border-b border-slate-200 bg-paper-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <th className="w-8 py-2 pl-2 font-medium">
-              <span className="sr-only">Details</span>
-            </th>
-            <th className="py-2 font-medium">Placed</th>
-            <th className="py-2 font-medium">Status</th>
-            <th className="py-2 text-right font-medium">Amount</th>
+          <tr className="sticky top-0 border-b border-line bg-surface text-left text-[13px] text-muted">
+            <th className="w-10 py-3 pl-5 font-normal">#</th>
+            <th className="py-3 font-normal">Placed</th>
+            <th className="py-3 font-normal">Status</th>
+            <th className="py-3 pr-5 text-right font-normal">Amount</th>
           </tr>
         </thead>
         <tbody>
-          {sorted.map((bid) => {
+          {sorted.map((bid, i) => {
             const isMine = !!currentUserId && bid.bidderId === currentUserId;
             const hasReason = !!bid.statusDescription;
             const isOpen = hasReason && expanded.has(bid.id);
-            const rowClass = `border-l-2 border-slate-200/60 ${
-              isMine ? "border-l-brass-500 bg-brass-500/10" : "border-l-transparent"
-            }`;
+            const rowClass = isMine ? "bg-subtle" : "";
             return (
               <Fragment key={bid.id}>
-                <tr className={`${rowClass} ${isOpen ? "" : "border-b"}`}>
-                  <td className="w-8 py-2 pl-2">
-                    {hasReason && (
-                      <button
-                        type="button"
-                        onClick={() => toggle(bid.id)}
-                        aria-expanded={isOpen}
-                        aria-label={isOpen ? "Hide reason" : "Show reason"}
-                        className="flex items-center text-slate-500 hover:text-ink-950"
-                      >
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
+                <tr className={`${rowClass} ${isOpen ? "" : "border-b border-line last:border-b-0"}`}>
+                  <td className="tabular-ticker py-3 pl-5 text-xs text-faint">{i + 1}</td>
+                  <td className="py-3">
+                    <div className="flex items-center gap-1.5">
+                      {hasReason && (
+                        <button
+                          type="button"
+                          onClick={() => toggle(bid.id)}
+                          aria-expanded={isOpen}
+                          aria-label={isOpen ? "Hide reason" : "Show reason"}
+                          className="-ml-1 flex h-6 w-6 items-center justify-center rounded-md text-muted hover:bg-subtle hover:text-fg"
+                        >
+                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                      )}
+                      <span className="tabular-ticker text-[13px] text-muted">{timeLabel(bid.placedAt)}</span>
+                      {isMine && <span className="text-[13px] font-medium text-fg">· You</span>}
+                    </div>
                   </td>
-                  <td className="tabular-ticker py-2 text-xs text-slate-500">
-                    {timeLabel(bid.placedAt)}
-                  </td>
-                  <td className="py-2">
+                  <td className="py-3">
                     <BidStatusPill status={bid.status} />
                   </td>
-                  <td className="tabular-ticker py-2 text-right font-semibold text-ink-950">
-                    {formatMoney(bid.amount)}
-                  </td>
+                  <td className="tabular-ticker py-3 pr-5 text-right font-semibold text-fg">{formatMoney(bid.amount)}</td>
                 </tr>
                 {isOpen && (
-                  <tr className={`border-b ${rowClass}`}>
-                    <td colSpan={4} className="py-2 pl-8 pr-2 font-sans text-xs text-slate-500">
+                  <tr className={`border-b border-line ${rowClass}`}>
+                    <td colSpan={4} className="pb-3 pl-14 pr-5 text-xs text-muted">
                       {bid.statusDescription}
                     </td>
                   </tr>

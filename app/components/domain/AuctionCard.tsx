@@ -4,45 +4,38 @@ import { CATEGORY_LABELS } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
 import { AuctionStatusPill } from "./StatusPills";
 import { CountdownTimer } from "./CountdownTimer";
+import { Package } from "lucide-react";
+import { CATEGORY_ICONS } from "./categoryIcons";
 
 export function AuctionCard({ auction }: { auction: AuctionSummaryResponse }) {
-  const target = auction.status === "LIVE" ? auction.endTime : auction.startTime;
-  const reference = auction.id.slice(0, 8).toUpperCase();
+  const Icon = CATEGORY_ICONS[auction.categories[0]] ?? Package;
 
   return (
-    <Link href={`/auctions/${auction.id}`} className="group flex flex-col gap-3">
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-paper-100">
-        <div className="flex h-full w-full items-center justify-center transition-transform duration-300 group-hover:scale-105">
-          <span className="font-display text-lg font-medium text-slate-500">
-            {CATEGORY_LABELS[auction.categories[0]] ?? "Auction"}
-          </span>
-        </div>
-        <div className="absolute right-3 top-3">
+    <Link
+      href={`/auctions/${auction.id}`}
+      className="group flex h-full gap-4 rounded-2xl border border-line bg-surface p-4 transition-colors hover:border-line-strong"
+    >
+      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted">
+        <Icon className="h-6 w-6" strokeWidth={1.5} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h3 className="truncate text-[15px] font-medium text-fg">{auction.title}</h3>
+        <p className="mt-0.5 truncate text-[13px] text-muted">
+          {auction.categories.map((c) => CATEGORY_LABELS[c]).join(", ") || "Uncategorized"} ·{" "}
+          {auction.itemCount} {auction.itemCount === 1 ? "item" : "items"}
+        </p>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-3">
           <AuctionStatusPill status={auction.status} />
-        </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <span className="tabular-ticker text-xs text-slate-500">LOT {reference}</span>
-          {(auction.status === "LIVE" || auction.status === "UPCOMING") && (
-            <CountdownTimer target={target} size="sm" />
-          )}
-        </div>
-        <h3 className="font-display text-base font-semibold leading-tight text-ink-950">
-          {auction.title}
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {auction.categories.slice(0, 2).map((c) => (
-            <span key={c} className="font-sans text-[13px] text-slate-500">
-              {CATEGORY_LABELS[c]}
-            </span>
-          ))}
-        </div>
-        <div className="mt-0.5 flex items-center justify-between font-sans text-[13px] text-slate-500">
-          <span>
-            {auction.itemCount} {auction.itemCount === 1 ? "item" : "items"}
+          <span className="text-[13px] text-muted">
+            {auction.status === "LIVE" || auction.status === "UPCOMING" ? (
+              <>
+                {auction.status === "LIVE" ? "Ends in " : "Starts in "}
+                <CountdownTimer target={auction.status === "LIVE" ? auction.endTime : auction.startTime} size="sm" />
+              </>
+            ) : (
+              <span className="tabular-ticker">{formatDateTime(auction.endTime)}</span>
+            )}
           </span>
-          <span>{formatDateTime(auction.startTime)}</span>
         </div>
       </div>
     </Link>

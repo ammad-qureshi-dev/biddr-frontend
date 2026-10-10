@@ -46,12 +46,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-6 py-16">
-      <h1 className="font-display text-3xl font-semibold text-ink-950">Register</h1>
-      <p className="mt-1 font-sans text-sm text-slate-500">
-        Create an account to bid and list auctions.
-      </p>
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+    <div>
+      <h1 className="text-2xl font-semibold text-fg">Create your account</h1>
+      <p className="mt-1 text-sm text-muted">Create an account to bid and list auctions.</p>
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <Input
           id="fullName"
           label="Full name"
@@ -82,14 +80,14 @@ export default function RegisterPage() {
           hint={PASSWORD_HINT}
           required
         />
-        {error && <p className="font-sans text-sm text-ledger-red">{error}</p>}
-        <Button type="submit" icon={UserPlus} disabled={submitting}>
+        {error && <p className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>}
+        <Button type="submit" icon={UserPlus} disabled={submitting} className="mt-1">
           {submitting ? "Creating account…" : "Create account"}
         </Button>
       </form>
-      <p className="mt-6 font-sans text-sm text-slate-500">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="hover:underline">
+        <Link href="/login" className="font-medium text-fg hover:underline">
           Sign in
         </Link>
       </p>

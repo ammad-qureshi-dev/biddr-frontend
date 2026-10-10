@@ -5,19 +5,29 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { notificationApi } from "@/lib/api";
 import type { ContactType, NotificationResponse, NotificationType } from "@/lib/types";
-import { StatusPill } from "../components/ui/StatusPill";
+import { StatusPill, type PillTone } from "../components/ui/StatusPill";
 import { NotificationStatusPill } from "../components/domain/StatusPills";
 import { EmptyState } from "../components/ui/EmptyState";
+import { Card } from "../components/ui/Card";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Segmented } from "../components/ui/Segmented";
 
 const PAGE_SIZE = 10;
 
-const TYPE_TONE: Record<NotificationType, "green" | "red" | "slate" | "ink" | "red-outline"> = {
-  SUCCESS: "green",
-  ERROR: "red",
-  WARNING: "red-outline",
-  ACTION_REQUIRED: "ink",
-  INFO: "slate",
+const TYPE_TONE: Record<NotificationType, PillTone> = {
+  SUCCESS: "success",
+  ERROR: "danger",
+  WARNING: "warning",
+  ACTION_REQUIRED: "info",
+  INFO: "neutral",
 };
+
+const CHANNEL_OPTIONS: { value: ContactType | ""; label: string }[] = [
+  { value: "", label: "All channels" },
+  { value: "EMAIL", label: "Email" },
+  { value: "PHONE", label: "Phone" },
+  { value: "APP", label: "App" },
+];
 
 const TYPE_LABEL: Record<NotificationType, string> = {
   SUCCESS: "Success",
@@ -92,46 +102,40 @@ export default function NotificationsPage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-6">
-        <h1 className="font-display text-3xl font-semibold text-ink-950">Notifications</h1>
-        <select
-          value={channel}
-          onChange={(e) => setChannel(e.target.value as ContactType | "")}
-          className="min-h-9 rounded-xl border border-slate-200 bg-paper-100 px-3 font-sans text-sm text-ink-950 outline-none"
-        >
-          <option value="">All channels</option>
-          <option value="EMAIL">Email</option>
-          <option value="PHONE">Phone</option>
-          <option value="APP">App</option>
-        </select>
-      </div>
+    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+      <PageHeader title="Notifications" description="Everything Bidder has sent you, newest first." />
 
-      <div
-        ref={setScrollEl}
-        className="mt-6 flex h-80 flex-col gap-2 overflow-y-auto"
-      >
-        {notifications === null ? (
-          <p className="font-sans text-sm text-slate-500">Loading…</p>
-        ) : notifications.length === 0 ? (
-          <EmptyState title="No notifications" body="You're all caught up." />
-        ) : (
-          notifications.map((n, i) => (
-            <div
-              key={i}
-              ref={i === midpointIndex ? setMidpointEl : undefined}
-              className="flex items-center justify-between rounded-xl border border-slate-200 bg-paper-100 p-4"
-            >
-              <span className="font-sans text-sm text-ink-950">{n.subject}</span>
-              <div className="flex items-center gap-2">
-                <StatusPill label={TYPE_LABEL[n.type]} tone={TYPE_TONE[n.type]} />
-                <NotificationStatusPill status={n.status} />
-              </div>
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <h2 className="text-[17px] font-semibold text-fg">Inbox</h2>
+          <Segmented label="Filter by channel" options={CHANNEL_OPTIONS} value={channel} onChange={setChannel} />
+        </div>
+
+        <div ref={setScrollEl} className="flex h-[32rem] flex-col overflow-y-auto">
+          {notifications === null ? (
+            <p className="px-5 py-8 text-center text-sm text-muted">Loading…</p>
+          ) : notifications.length === 0 ? (
+            <div className="p-5">
+              <EmptyState title="No notifications" body="You're all caught up." />
             </div>
-          ))
-        )}
-        {loadingMore && <p className="py-2 text-center font-sans text-sm text-slate-500">Loading more…</p>}
-      </div>
+          ) : (
+            notifications.map((n, i) => (
+              <div
+                key={i}
+                ref={i === midpointIndex ? setMidpointEl : undefined}
+                className="flex flex-wrap items-center gap-x-6 gap-y-1 border-b border-line px-5 py-3.5 last:border-b-0 sm:flex-nowrap"
+              >
+                <span className="min-w-0 flex-1 text-sm text-fg">{n.subject}</span>
+                <div className="flex items-center gap-5">
+                  <StatusPill label={TYPE_LABEL[n.type]} tone={TYPE_TONE[n.type]} />
+                  <NotificationStatusPill status={n.status} />
+                </div>
+              </div>
+            ))
+          )}
+          {loadingMore && <p className="py-3 text-center text-sm text-muted">Loading more…</p>}
+        </div>
+      </Card>
     </div>
   );
 }

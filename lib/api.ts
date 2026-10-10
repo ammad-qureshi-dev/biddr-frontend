@@ -1,3 +1,4 @@
+import { API_BASE_URL as GATEWAY_URL } from "./config";
 import type {
   ApiResponse,
   AppUser,
@@ -14,9 +15,6 @@ import type {
   PageResponse,
   PreferredContactMethod,
 } from "./types";
-
-const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export class ApiError extends Error {
   status: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +9,7 @@ import { bidApi, itemApi } from "@/lib/api";
 import type { BidStatus, BidSummaryResponse, ItemResponse } from "@/lib/types";
 import { getAuctionForItem } from "@/lib/item-auction-cache";
 import { formatMoney, formatDateTime } from "@/lib/format";
+import { loginHref } from "@/lib/next-url";
 import { BidStatusPill } from "../components/domain/StatusPills";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Card } from "../components/ui/Card";
@@ -26,13 +27,14 @@ const TABS = [
 export default function MyBidsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [bids, setBids] = useState<BidSummaryResponse[] | null>(null);
   const [items, setItems] = useState<Record<string, ItemResponse>>({});
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("ALL");
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [loading, user, router]);
+    if (!loading && !user) router.push(loginHref(pathname));
+  }, [loading, user, router, pathname]);
 
   useEffect(() => {
     if (!user) return;

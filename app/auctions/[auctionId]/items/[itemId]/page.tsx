@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, X, Ban } from "lucide-react";
-import { formatDateTime, formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney, formatPickupRegion, formatPickupStreet } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { rememberItemAuction } from "@/lib/item-auction-cache";
 import { auctionApi, itemApi, bidApi, ApiError } from "@/lib/api";
 import type { AuctionResponse, BidSummaryResponse, ItemResponse } from "@/lib/types";
+import { loginHref } from "@/lib/next-url";
 import { BidAmountDisplay } from "../../../../components/domain/BidAmountDisplay";
 import { CountdownTimer } from "../../../../components/domain/CountdownTimer";
 import { BidInput } from "../../../../components/domain/BidInput";
@@ -76,13 +77,18 @@ export default function ItemDetailPage() {
         : "default";
 
   const canBid = !!user && !isOwner && isLive;
-  const bidDisabledReason = !user
-    ? "Sign in to place a bid."
-    : isOwner
-      ? "You can't bid on your own auction."
-      : !isLive
-        ? "Bidding opens once the auction is live."
-        : undefined;
+  const bidDisabledReason: React.ReactNode = !user ? (
+    <>
+      <Link href={loginHref(`/auctions/${auctionId}/items/${itemId}`)} className="font-medium text-fg underline">
+        Sign in
+      </Link>{" "}
+      to place a bid.
+    </>
+  ) : isOwner ? (
+    "You can't bid on your own auction."
+  ) : !isLive ? (
+    "Bidding opens once the auction is live."
+  ) : undefined;
 
   const canAccept =
     isOwner && currentHighestBid?.status === "ACTIVE" && auction.auctionStatus !== "CLOSED";
@@ -164,9 +170,9 @@ export default function ItemDetailPage() {
       label: "Reserve price",
       value: item.minimumPrice !== null ? formatMoney(item.minimumPrice) : <span className="text-faint">None</span>,
     },
+    { label: "Bids", value: bids.length },
     { label: "Auction starts", value: formatDateTime(auction.startTime) },
     { label: "Auction ends", value: formatDateTime(auction.endTime) },
-    { label: "Bids shown", value: bids.length },
   ];
 
   return (
@@ -192,6 +198,36 @@ export default function ItemDetailPage() {
                 </div>
               ))}
             </dl>
+          </Card>
+
+          <Card className="p-5">
+            <h2 className="text-[17px] font-semibold text-fg">Pickup information</h2>
+            {auction.pickupLocation ? (
+              <>
+                <address className="mt-2 text-[15px] not-italic leading-relaxed text-fg">
+                  {formatPickupStreet(auction.pickupLocation)}
+                  <br />
+                  <span className="text-muted">{formatPickupRegion(auction.pickupLocation)}</span>
+                </address>
+                {auction.pickupLocation.instructions && (
+                  <p className="mt-3 whitespace-pre-line border-t border-line pt-3 text-sm text-muted">
+                    {auction.pickupLocation.instructions}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-muted">
+                No pickup location has been added yet.
+                {isOwner && auction.auctionStatus !== "CLOSED" && (
+                  <>
+                    {" "}
+                    <Link href={`/auctions/${auctionId}/edit`} className="text-fg underline">
+                      Add one
+                    </Link>
+                  </>
+                )}
+              </p>
+            )}
           </Card>
 
           <Card className="overflow-hidden">

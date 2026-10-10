@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { toggleTheme } from "@/lib/theme";
+import { loginHref } from "@/lib/next-url";
 import { Avatar } from "../ui/Avatar";
 import { LinkButton } from "../ui/Button";
 
@@ -97,6 +98,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 function Sidebar({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  const loginUrl = loginHref(pathname);
   const { user } = useAuth();
   return (
     <div className="flex h-full flex-col gap-7 overflow-y-auto px-4 py-6">
@@ -146,7 +148,7 @@ function Sidebar({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
           <div className="rounded-2xl border border-line bg-surface p-4">
             <p className="text-sm font-medium text-fg">Start bidding</p>
             <p className="mt-1 text-[13px] leading-snug text-muted">Sign in to place bids and list your own auctions.</p>
-            <LinkButton href="/login" variant="secondary" size="sm" className="mt-3" onClick={onNavigate}>
+            <LinkButton href={loginUrl} variant="secondary" size="sm" className="mt-3" onClick={onNavigate}>
               Log in
             </LinkButton>
           </div>
@@ -240,7 +242,7 @@ function TopBar({ pathname, onOpenMenu }: { pathname: string; onOpenMenu: () => 
           </>
         ) : (
           <>
-            <LinkButton href="/login" variant="secondary" size="sm" className="min-h-10">
+            <LinkButton href={loginHref(pathname)} variant="secondary" size="sm" className="min-h-10">
               Log in
             </LinkButton>
             <span className="hidden sm:block">

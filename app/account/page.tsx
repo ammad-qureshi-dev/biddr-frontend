@@ -7,35 +7,17 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { appUserApi, authApi, ApiError } from "@/lib/api";
 import type { ContactType, PreferredContactMethod } from "@/lib/types";
+import { loginHref } from "@/lib/next-url";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { Avatar } from "../components/ui/Avatar";
 import { Card } from "../components/ui/Card";
-import type { ReactNode } from "react";
+import { Segmented } from "../components/ui/Segmented";
 
 const NOT_APPLICABLE = "N/A";
 
-/** Settings row: title + description on the left, controls on the right (stacked on mobile). */
-function SettingsSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <Card className="grid grid-cols-1 gap-5 p-5 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 md:p-6">
-      <div>
-        <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
-        <p className="mt-1 text-sm text-muted">{description}</p>
-      </div>
-      <div className="flex flex-col gap-4">{children}</div>
-    </Card>
-  );
-}
+type Tab = "contact" | "password";
 
 function ContactRow({ label, value }: { label: string; value: string | undefined }) {
   return (
@@ -51,6 +33,7 @@ export default function AccountPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const [tab, setTab] = useState<Tab>("contact");
   const [verified, setVerified] = useState<boolean | null>(null);
   const [contacts, setContacts] = useState<Record<ContactType, string> | null>(null);
   const [preferred, setPreferred] = useState<PreferredContactMethod | null>(null);
@@ -59,7 +42,7 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push(loginHref("/account"));
   }, [loading, user, router]);
 
   useEffect(() => {
@@ -164,77 +147,102 @@ export default function AccountPage() {
       </Card>
 
       {verified === false && (
-        <SettingsSection
-          title="Verify your account"
-          description="We'll email a verification link to your registered address."
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">Verification confirms you own this email address.</p>
-            <Button icon={MailCheck} onClick={handleSendVerification} disabled={busy}>
-              Send verification link
-            </Button>
+        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-fg">
+            <MailCheck className="h-4 w-4 shrink-0 text-muted" />
+            <span>Verify your account — we&apos;ll email a link to your registered address.</span>
           </div>
-        </SettingsSection>
+          <Button icon={MailCheck} size="sm" onClick={handleSendVerification} disabled={busy}>
+            Send verification link
+          </Button>
+        </Card>
       )}
 
-      <SettingsSection title="Contact methods" description="The email and phone number on file for your account.">
-        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <ContactRow label="Email" value={contacts?.EMAIL} />
-          <ContactRow label="Phone" value={contacts?.PHONE} />
-        </dl>
-      </SettingsSection>
+      <Segmented
+        label="Account section"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "contact", label: "Contact" },
+          { value: "password", label: "Password" },
+        ]}
+      />
 
-      <SettingsSection
-        title="Preferred contact method"
-        description="Used as your default channel for bid updates and account notifications."
-      >
-        <Select
-          id="preferredChoice"
-          label="Channel"
-          value={preferredChoice}
-          onChange={(e) => setPreferredChoice(e.target.value as ContactType)}
-        >
-          <option value="EMAIL">Email</option>
-          <option value="PHONE">Phone</option>
-        </Select>
-        {preferredNeedsValue && (
-          <Input
-            id="newContactValue"
-            label={preferredChoice === "EMAIL" ? "Email address" : "Phone number"}
-            value={newContactValue}
-            onChange={(e) => setNewContactValue(e.target.value)}
-          />
-        )}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs text-muted">
-            {preferred?.type && <>Currently: {preferred.type === "EMAIL" ? "Email" : "Phone"} ({preferred.value})</>}
-          </span>
-          <Button icon={Save} variant="secondary" onClick={handleSetPreferred} disabled={busy}>
-            Save preference
-          </Button>
-        </div>
-      </SettingsSection>
+      {tab === "contact" ? (
+        <Card className="flex flex-col gap-6 p-5 md:p-6">
+          <div>
+            <h2 className="text-[15px] font-semibold text-fg">Contact methods</h2>
+            <p className="mt-1 text-sm text-muted">The email and phone number on file for your account.</p>
+            <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <ContactRow label="Email" value={contacts?.EMAIL} />
+              <ContactRow label="Phone" value={contacts?.PHONE} />
+            </dl>
+          </div>
 
-      <SettingsSection title="Password" description="We'll send a reset link to your email or phone.">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            icon={Mail}
-            onClick={() => handleSendReset("EMAIL")}
-            disabled={busy || !contacts || contacts.EMAIL === NOT_APPLICABLE}
-          >
-            Email me a link
-          </Button>
-          <Button
-            variant="secondary"
-            icon={MessageSquare}
-            onClick={() => handleSendReset("PHONE")}
-            disabled={busy || !contacts || contacts.PHONE === NOT_APPLICABLE}
-          >
-            Text me a link
-          </Button>
-        </div>
-      </SettingsSection>
+          <div className="border-t border-line pt-6">
+            <h2 className="text-[15px] font-semibold text-fg">Preferred contact method</h2>
+            <p className="mt-1 text-sm text-muted">
+              Used as your default channel for bid updates and account notifications.
+            </p>
+            <div className="mt-4 flex flex-col gap-4">
+              <Select
+                id="preferredChoice"
+                label="Channel"
+                value={preferredChoice}
+                onChange={(e) => setPreferredChoice(e.target.value as ContactType)}
+              >
+                <option value="EMAIL">Email</option>
+                <option value="PHONE">Phone</option>
+              </Select>
+              {preferredNeedsValue && (
+                <Input
+                  id="newContactValue"
+                  label={preferredChoice === "EMAIL" ? "Email address" : "Phone number"}
+                  value={newContactValue}
+                  onChange={(e) => setNewContactValue(e.target.value)}
+                />
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-muted">
+                  {preferred?.type && (
+                    <>
+                      Currently: {preferred.type === "EMAIL" ? "Email" : "Phone"} ({preferred.value})
+                    </>
+                  )}
+                </span>
+                <Button icon={Save} variant="secondary" onClick={handleSetPreferred} disabled={busy}>
+                  Save preference
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="flex flex-col gap-4 p-5 md:p-6">
+          <div>
+            <h2 className="text-[15px] font-semibold text-fg">Password</h2>
+            <p className="mt-1 text-sm text-muted">We&apos;ll send a reset link to your email or phone.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              icon={Mail}
+              onClick={() => handleSendReset("EMAIL")}
+              disabled={busy || !contacts || contacts.EMAIL === NOT_APPLICABLE}
+            >
+              Email me a link
+            </Button>
+            <Button
+              variant="secondary"
+              icon={MessageSquare}
+              onClick={() => handleSendReset("PHONE")}
+              disabled={busy || !contacts || contacts.PHONE === NOT_APPLICABLE}
+            >
+              Text me a link
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,3 +1,20 @@
+import type { PickupLocation } from "./types";
+
+/** "Unit 4, 120 King St W" — the first line of a pickup address. */
+export function formatPickupStreet(loc: PickupLocation): string {
+  return `Unit ${loc.unit}, ${loc.street}`;
+}
+
+/** "Toronto, ON M5H 1J9" plus country — the second line of a pickup address. */
+export function formatPickupRegion(loc: PickupLocation): string {
+  return `${loc.city}, ${loc.state} ${loc.postalCode}, ${loc.country}`;
+}
+
+/** Short "City, State" form for cards and tables. */
+export function formatPickupCity(loc: PickupLocation | null | undefined): string {
+  return loc ? `${loc.city}, ${loc.state}` : "—";
+}
+
 export function formatMoney(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return "—";
   return new Intl.NumberFormat("en-US", {

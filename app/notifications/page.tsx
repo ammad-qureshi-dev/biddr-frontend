@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { notificationApi } from "@/lib/api";
 import type { ContactType, NotificationResponse, NotificationType } from "@/lib/types";
+import { loginHref } from "@/lib/next-url";
 import { StatusPill, type PillTone } from "../components/ui/StatusPill";
 import { NotificationStatusPill } from "../components/domain/StatusPills";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -47,7 +48,7 @@ export default function NotificationsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push(loginHref("/notifications"));
   }, [loading, user, router]);
 
   useEffect(() => {
@@ -66,8 +67,15 @@ export default function NotificationsPage() {
       });
   }, [user, channel]);
 
+  // A ref, not the `loadingMore` state, guards against re-entrancy: the IntersectionObserver
+  // below can fire again (e.g. re-observing the same still-visible element on mount) before a
+  // state update from the previous call has committed and `loadMore` has been recreated with
+  // a fresh closure — a stale `loadingMore` read would let the same page be fetched twice.
+  const loadingRef = useRef(false);
+
   const loadMore = useCallback(() => {
-    if (!user || loadingMore || !hasNext) return;
+    if (!user || loadingRef.current || !hasNext) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     const nextPage = page + 1;
     notificationApi
@@ -77,8 +85,11 @@ export default function NotificationsPage() {
         setPage(nextPage);
         setHasNext(res.hasNext);
       })
-      .finally(() => setLoadingMore(false));
-  }, [user, loadingMore, hasNext, page, channel]);
+      .finally(() => {
+        loadingRef.current = false;
+        setLoadingMore(false);
+      });
+  }, [user, hasNext, page, channel]);
 
   // Fires once the row halfway through the currently loaded list scrolls into
   // view inside the scrollable list container, so the next page arrives

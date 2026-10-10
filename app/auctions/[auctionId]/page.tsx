@@ -9,7 +9,7 @@ import { useToast } from "@/lib/toast-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionResponse, AuctionStatus, ItemSummaryResponse } from "@/lib/types";
 import { CATEGORY_LABELS } from "@/lib/types";
-import { formatDateTime, formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney, formatPickupRegion, formatPickupStreet } from "@/lib/format";
 import { AuctionStatusPill, ItemSoldBadge } from "../../components/domain/StatusPills";
 import { CountdownTimer } from "../../components/domain/CountdownTimer";
 import { Button, LinkButton } from "../../components/ui/Button";
@@ -188,6 +188,36 @@ export default function AuctionDetailPage() {
         />
         <SummaryItem label="Starts" value={formatDateTime(auction.startTime)} />
         <SummaryItem label="Ends" value={formatDateTime(auction.endTime)} />
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="text-[17px] font-semibold text-fg">Pickup information</h2>
+        {auction.pickupLocation ? (
+          <>
+            <address className="mt-2 text-[15px] not-italic leading-relaxed text-fg">
+              {formatPickupStreet(auction.pickupLocation)}
+              <br />
+              <span className="text-muted">{formatPickupRegion(auction.pickupLocation)}</span>
+            </address>
+            {auction.pickupLocation.instructions && (
+              <p className="mt-3 whitespace-pre-line border-t border-line pt-3 text-sm text-muted">
+                {auction.pickupLocation.instructions}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-muted">
+            No pickup location has been added yet.
+            {isOwner && auction.auctionStatus !== "CLOSED" && (
+              <>
+                {" "}
+                <Link href={`/auctions/${auctionId}/edit`} className="text-fg underline">
+                  Add one
+                </Link>
+              </>
+            )}
+          </p>
+        )}
       </Card>
 
       <Card className="overflow-hidden">

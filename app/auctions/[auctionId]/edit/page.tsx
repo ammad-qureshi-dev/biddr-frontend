@@ -10,10 +10,17 @@ import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, AuctionResponse, ItemRequest } from "@/lib/types";
 import { toLocalDateTimeInputValue, snapToQuarterHour } from "@/lib/format";
 import { formatMoney } from "@/lib/format";
+import { loginHref } from "@/lib/next-url";
 import { Input, Textarea } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
 import { DateTimeField } from "../../../components/ui/DateTimeField";
 import { CategoryPicker } from "../../../components/domain/CategoryPicker";
+import {
+  PickupLocationFields,
+  emptyPickupDraft,
+  pickupDraftFrom,
+  pickupDraftToLocation,
+} from "../../../components/domain/PickupLocationFields";
 
 const emptyItem = (): ItemRequest => ({ title: "", description: "", minimumPrice: null });
 
@@ -27,13 +34,14 @@ export default function EditAuctionPage() {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [categories, setCategories] = useState<AuctionCategory[]>([]);
+  const [pickup, setPickup] = useState(emptyPickupDraft);
   const [newItems, setNewItems] = useState<ItemRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [loading, user, router]);
+    if (!loading && !user) router.push(loginHref(`/auctions/${auctionId}/edit`));
+  }, [loading, user, router, auctionId]);
 
   useEffect(() => {
     auctionApi
@@ -44,6 +52,7 @@ export default function EditAuctionPage() {
         setStartTime(new Date(a.startTime));
         setEndTime(new Date(a.endTime));
         setCategories(a.categories);
+        setPickup(pickupDraftFrom(a.pickupLocation));
       })
       .catch(() => router.push(`/auctions/${auctionId}`));
   }, [auctionId]);
@@ -67,6 +76,12 @@ export default function EditAuctionPage() {
       setError("Start time must be before end time.");
       return;
     }
+    // Update requires a pickup location too, so auctions created before it existed must add one here.
+    const pickupLocation = pickupDraftToLocation(pickup);
+    if (typeof pickupLocation === "string") {
+      setError(pickupLocation);
+      return;
+    }
     setSubmitting(true);
     try {
       const existingItems: ItemRequest[] = (auction?.items ?? []).map((it) => ({
@@ -81,6 +96,7 @@ export default function EditAuctionPage() {
         endTime: endTime.toISOString(),
         categories,
         biddingItems: [...existingItems, ...newItems.filter((it) => it.title.trim())],
+        pickupLocation,
       });
       router.push(`/auctions/${auctionId}`);
     } catch (err) {
@@ -95,7 +111,7 @@ export default function EditAuctionPage() {
       <PageHeader
         back={{ href: `/auctions/${auctionId}`, label: auction.title }}
         title="Edit auction"
-        description="Update the schedule and categories, or add more items."
+        description="Update the schedule, categories, and pickup details, or add more items."
       />
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <Card className="flex flex-col gap-5 p-5">
@@ -121,6 +137,11 @@ export default function EditAuctionPage() {
         <Card className="flex flex-col gap-4 p-5">
           <CardHeader title="Categories" description="Help bidders find your auction." />
           <CategoryPicker selected={categories} onChange={setCategories} />
+        </Card>
+
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Pickup information" description="Where the winning bidder collects the items." />
+          <PickupLocationFields value={pickup} onChange={setPickup} />
         </Card>
 
         <Card className="overflow-hidden">

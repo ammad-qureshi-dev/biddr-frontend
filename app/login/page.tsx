@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
+import { safeNextPath } from "@/lib/next-url";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const next = safeNextPath(useSearchParams().get("next")) ?? "/";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function LoginPage() {
           ? { email: identifier, password }
           : { phoneNumber: identifier, password },
       );
-      router.push("/");
+      router.push(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.messages[0] : "Something went wrong.");
     } finally {
@@ -75,5 +77,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

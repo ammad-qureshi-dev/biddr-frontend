@@ -60,6 +60,18 @@ export const CATEGORY_LABELS: Record<AuctionCategory, string> = {
   OTHER: "Other",
 };
 
+/** Where the winner collects the goods. Stored on the auction as JSON; every field but `instructions` is required. */
+export type PickupLocation = {
+  unit: number;
+  street: string;
+  city: string;
+  postalCode: string;
+  state: string;
+  country: string;
+  /** Free-text pickup instructions (e.g. "buzz #4, use the loading dock"). Optional, max 512 chars. */
+  instructions: string | null;
+};
+
 export type ItemRequest = {
   id?: string | null;
   title: string;
@@ -95,6 +107,8 @@ export type AuctionResponse = {
   items: ItemResponse[];
   startTime: string;
   endTime: string;
+  /** Null for auctions created before pickup locations existed. */
+  pickupLocation: PickupLocation | null;
 };
 
 export type AuctionSummaryResponse = {
@@ -105,6 +119,7 @@ export type AuctionSummaryResponse = {
   itemCount: number;
   startTime: string;
   endTime: string;
+  pickupLocation: PickupLocation | null;
 };
 
 export type AuctionRequest = {
@@ -113,6 +128,8 @@ export type AuctionRequest = {
   endTime: string;
   biddingItems: ItemRequest[];
   categories: AuctionCategory[];
+  /** Required on both create and update — catalog-service rejects the request without it. */
+  pickupLocation: PickupLocation;
 };
 
 export type BidStatus =

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { auctionApi } from "@/lib/api";
 import type { AuctionSummaryResponse } from "@/lib/types";
+import { loginHref } from "@/lib/next-url";
 import { AuctionTable } from "../../components/domain/AuctionTable";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Card } from "../../components/ui/Card";
@@ -24,7 +25,7 @@ export default function MyAuctionsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push(loginHref("/auctions/my-auctions"));
   }, [loading, user, router]);
 
   useEffect(() => {
@@ -43,19 +44,32 @@ export default function MyAuctionsPage() {
       });
   }, [user]);
 
+  // A ref, not the `loadingMore` state, guards against re-entrancy: the IntersectionObserver
+  // below can fire again (e.g. re-observing the same still-visible element on mount) before a
+  // state update from the previous call has committed and `loadMore` has been recreated with
+  // a fresh closure — a stale `loadingMore` read would let the same page be fetched twice.
+  const loadingRef = useRef(false);
+
   const loadMore = useCallback(() => {
-    if (loadingMore || !hasNext) return;
+    if (loadingRef.current || !hasNext) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     const nextPage = page + 1;
     auctionApi
       .getMyAuctions({ page: nextPage, size: PAGE_SIZE })
       .then((res) => {
-        setAuctions((prev) => [...(prev ?? []), ...res.content]);
+        setAuctions((prev) => {
+          const seen = new Set((prev ?? []).map((a) => a.id));
+          return [...(prev ?? []), ...res.content.filter((a) => !seen.has(a.id))];
+        });
         setPage(nextPage);
         setHasNext(res.hasNext);
       })
-      .finally(() => setLoadingMore(false));
-  }, [loadingMore, hasNext, page]);
+      .finally(() => {
+        loadingRef.current = false;
+        setLoadingMore(false);
+      });
+  }, [hasNext, page]);
 
   // Fires once the row halfway through the currently loaded table scrolls into the
   // viewport, so the next page arrives before the user reaches the actual bottom.

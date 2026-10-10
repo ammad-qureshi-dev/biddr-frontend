@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AuctionSummaryResponse } from "@/lib/types";
 import { CATEGORY_LABELS } from "@/lib/types";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatPickupCity } from "@/lib/format";
 import { AuctionStatusPill } from "./StatusPills";
 import { CountdownTimer } from "./CountdownTimer";
 import { Package } from "lucide-react";
@@ -24,6 +24,9 @@ export function AuctionCard({ auction }: { auction: AuctionSummaryResponse }) {
           {auction.categories.map((c) => CATEGORY_LABELS[c]).join(", ") || "Uncategorized"} ·{" "}
           {auction.itemCount} {auction.itemCount === 1 ? "item" : "items"}
         </p>
+        {auction.pickupLocation && (
+          <p className="truncate text-[13px] text-muted">Pickup in {formatPickupCity(auction.pickupLocation)}</p>
+        )}
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
           <AuctionStatusPill status={auction.status} />
           <span className="text-[13px] text-muted">

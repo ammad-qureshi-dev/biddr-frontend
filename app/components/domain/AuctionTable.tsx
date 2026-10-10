@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { AuctionSummaryResponse } from "@/lib/types";
 import { CATEGORY_LABELS } from "@/lib/types";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatPickupCity } from "@/lib/format";
 import { AuctionStatusPill } from "./StatusPills";
 
 /** Dense table of auction summaries; every row links through to the auction. */
@@ -20,12 +20,13 @@ export function AuctionTable({
   const router = useRouter();
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[720px] border-collapse text-sm">
+      <table className="w-full min-w-[840px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left text-[13px] text-muted">
             <th className="px-5 py-2.5 font-normal">Auction</th>
             <th className="px-3 py-2.5 font-normal">Status</th>
             <th className="px-3 py-2.5 text-right font-normal">Items</th>
+            <th className="px-3 py-2.5 font-normal">Pickup</th>
             <th className="px-3 py-2.5 font-normal">Starts</th>
             <th className="px-3 py-2.5 font-normal">Ends</th>
             <th className="w-10 px-3 py-3">
@@ -59,6 +60,7 @@ export function AuctionTable({
                 <AuctionStatusPill status={a.status} />
               </td>
               <td className="tabular-ticker px-3 py-3.5 text-right text-fg">{a.itemCount}</td>
+              <td className="whitespace-nowrap px-3 py-3.5 text-muted">{formatPickupCity(a.pickupLocation)}</td>
               <td className="tabular-ticker whitespace-nowrap px-3 py-3.5 text-muted">{formatDateTime(a.startTime)}</td>
               <td className="tabular-ticker whitespace-nowrap px-3 py-3.5 text-muted">{formatDateTime(a.endTime)}</td>
               <td className="px-3 py-3.5 text-faint">

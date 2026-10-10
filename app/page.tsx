@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { auctionApi } from "@/lib/api";
 import type { AuctionStatus, AuctionSummaryResponse } from "@/lib/types";
@@ -55,19 +55,32 @@ function BrowseContent() {
     run();
   }, [title, status]);
 
+  // A ref, not the `loadingMore` state, guards against re-entrancy: the IntersectionObserver
+  // below can fire again (e.g. re-observing the same still-visible element on mount) before a
+  // state update from the previous call has committed and `loadMore` has been recreated with
+  // a fresh closure — a stale `loadingMore` read would let the same page be fetched twice.
+  const loadingRef = useRef(false);
+
   const loadMore = useCallback(() => {
-    if (loadingMore || !hasNext) return;
+    if (loadingRef.current || !hasNext) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     const nextPage = page + 1;
     auctionApi
       .search({ title: title || undefined, status: status || undefined, page: nextPage, size: PAGE_SIZE })
       .then((res) => {
-        setAuctions((prev) => [...(prev ?? []), ...res.content]);
+        setAuctions((prev) => {
+          const seen = new Set((prev ?? []).map((a) => a.id));
+          return [...(prev ?? []), ...res.content.filter((a) => !seen.has(a.id))];
+        });
         setPage(nextPage);
         setHasNext(res.hasNext);
       })
-      .finally(() => setLoadingMore(false));
-  }, [loadingMore, hasNext, page, title, status]);
+      .finally(() => {
+        loadingRef.current = false;
+        setLoadingMore(false);
+      });
+  }, [hasNext, page, title, status]);
 
   // Fires once the card halfway through the currently loaded grid scrolls into the
   // viewport, so the next page arrives before the user reaches the actual bottom.

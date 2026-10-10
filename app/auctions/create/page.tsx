@@ -9,10 +9,16 @@ import { useAuth } from "@/lib/auth-context";
 import { auctionApi, ApiError } from "@/lib/api";
 import type { AuctionCategory, ItemRequest } from "@/lib/types";
 import { snapToQuarterHour } from "@/lib/format";
+import { loginHref } from "@/lib/next-url";
 import { Input, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { DateTimeField } from "../../components/ui/DateTimeField";
 import { CategoryPicker } from "../../components/domain/CategoryPicker";
+import {
+  PickupLocationFields,
+  emptyPickupDraft,
+  pickupDraftToLocation,
+} from "../../components/domain/PickupLocationFields";
 
 function nextQuarterHour(offsetMinutes = 0) {
   return snapToQuarterHour(new Date(Date.now() + offsetMinutes * 60 * 1000));
@@ -28,12 +34,13 @@ export default function CreateAuctionPage() {
   const [startTime, setStartTime] = useState<Date>(() => nextQuarterHour(15));
   const [endTime, setEndTime] = useState<Date>(() => nextQuarterHour(24 * 60));
   const [categories, setCategories] = useState<AuctionCategory[]>([]);
+  const [pickup, setPickup] = useState(emptyPickupDraft);
   const [items, setItems] = useState<ItemRequest[]>([emptyItem()]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push(loginHref("/auctions/create"));
   }, [loading, user, router]);
 
   function updateItem(index: number, patch: Partial<ItemRequest>) {
@@ -52,6 +59,11 @@ export default function CreateAuctionPage() {
       setError("Add at least one item, each with a title.");
       return;
     }
+    const pickupLocation = pickupDraftToLocation(pickup);
+    if (typeof pickupLocation === "string") {
+      setError(pickupLocation);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -61,6 +73,7 @@ export default function CreateAuctionPage() {
         endTime: endTime.toISOString(),
         categories,
         biddingItems: items,
+        pickupLocation,
       });
       router.push(`/auctions/${id}`);
     } catch (err) {
@@ -92,6 +105,11 @@ export default function CreateAuctionPage() {
         <Card className="flex flex-col gap-4 p-5">
           <CardHeader title="Categories" description="Help bidders find your auction." />
           <CategoryPicker selected={categories} onChange={setCategories} />
+        </Card>
+
+        <Card className="flex flex-col gap-4 p-5">
+          <CardHeader title="Pickup information" description="Where the winning bidder collects the items." />
+          <PickupLocationFields value={pickup} onChange={setPickup} />
         </Card>
 
         <Card className="flex flex-col gap-4 p-5">

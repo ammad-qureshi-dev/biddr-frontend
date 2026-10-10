@@ -87,7 +87,7 @@ export default function ItemDetailPage() {
 
   async function handleBid(amount: number) {
     try {
-      const bidId = await bidApi.create({ auctionId, itemId, amount });
+      const bidId = await bidApi.create({ auctionId, itemId, itemName: item!.title, amount });
       const result = await bidApi.searchByIds([bidId]);
       const placed = result.data?.[0];
       if (placed?.status === "REJECTED") {
@@ -123,7 +123,7 @@ export default function ItemDetailPage() {
     if (!rejectTarget || !rejectReason.trim()) return;
     setBusy(true);
     try {
-      await bidApi.reject(rejectTarget, rejectReason);
+      await bidApi.reject(rejectTarget, item!.title, rejectReason);
       showToast("Bid rejected.");
       setRejectTarget(null);
       setRejectReason("");

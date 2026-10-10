@@ -10,39 +10,39 @@
 
 Bidder is a live-bidding auction platform (general goods, cars, real estate). One instinct still holds regardless of visual style: **auctions are a scoreboard, not a catalog.** The number is the content. Time is the content. Everything else — copy, chrome, decoration — supports those two things and gets out of the way when the clock is running.
 
-**Direction: "Airbnb shapes, Supabase color, dark by default."** This is a single-theme **dark** application — there is no light mode and no toggle, the whole product is always dark. Structurally it's still an image-forward listings product: generous rounded corners (`rounded-2xl` on cards/images, fully pill-shaped buttons and search fields), borderless cards that rely on whitespace and a large square image instead of a bordered panel, soft hover lift/zoom instead of shadows-as-decoration. Colorwise: a near-black app background, a single mint-green accent (Supabase-style — this is literally how Supabase's own dashboard looks, dark base + this exact green), off-white text, neutral (not warm) grays. One typeface family (Poppins) for everything except numbers, which stay monospace.
+**Direction: "Airbnb."** This is a single-theme **light** application — there is no dark mode and no toggle, the whole product is always light. It's an image-forward listings product: generous rounded corners (`rounded-2xl` on cards/images, fully pill-shaped buttons and search fields), borderless cards that rely on whitespace and a large square image instead of a bordered panel, soft hover lift/zoom instead of shadows-as-decoration. Colorwise: a white/off-white app background, a single coral accent (Airbnb's own "Rausch" red-pink), near-black text, neutral (not cold) grays. One typeface family (Poppins) for everything except numbers, which stay monospace.
 
 Bid amounts and countdowns still snap rather than fade, and status is still color-coded — that mechanical-ticker precision survives every visual direction this doc has been through.
 
-Avoid: gradients, neon, confetti, light/white panels floating in the dark UI, drop shadows as decoration, warm/cream tints (grays are neutral, not "paper"), and don't build a light-mode variant or a theme switcher — dark is the only theme. Structure and whitespace carry the hierarchy; the accent color is spent sparingly and only when it means something.
+Avoid: gradients, neon, confetti, dark panels floating in the light UI, drop shadows as decoration, cold/gray-blue tints (grays are neutral, warm-leaning like Airbnb's own, not slate-blue), and don't build a dark-mode variant or a theme switcher — light is the only theme. Structure and whitespace carry the hierarchy; the accent color is spent sparingly and only when it means something.
 
 ---
 
 ## 2. Color System
 
-> Token names below (`ink`, `paper`, `brass`, `ledger-*`) are historical from earlier visual directions this doc has cycled through — kept as-is so component code doesn't need renaming every time the palette changes. They're also inverted from what they sound like: "paper" is the dark app surface, "ink" is the light text drawn on it. Read the Hex/Use columns as ground truth, not the names.
+> Token names below (`ink`, `paper`, `brass`, `ledger-*`) are historical from earlier visual directions this doc has cycled through — kept as-is so component code doesn't need renaming every time the palette changes. Read the Hex/Use columns as ground truth, not the names.
 
 | Token            | Hex       | Use                                                                                   |
 | ---------------- | --------- | -------------------------------------------------------------------------------------- |
-| `--ink-950`      | `#FAFAFA` | Primary text and borders/outlines — off-white, drawn on the dark app background        |
-| `--ink-800`      | `#D4D4D4` | Secondary light tone, rarely used directly                                             |
-| `--paper-50`     | `#0A0A0A` | Page background — near-black, the base the whole app sits on                           |
-| `--paper-100`    | `#18181B` | Elevated surface — cards, panels, image placeholders; one step lighter than the page so content reads as "raised" without a shadow |
-| `--brass-500`    | `#3ECF8E` | Primary accent — Supabase-style mint green. CTAs, links, focus ring, selected states    |
-| `--brass-600`    | `#2FB579` | Accent hover/pressed                                                                    |
-| `--ledger-green` | `#22C55E` | Winning / live / success status (a different, more saturated green than the accent so "you're winning" doesn't visually blend into every button on the page) |
-| `--ledger-red`   | `#EF4444` | Outbid / error / closes-soon urgency                                                   |
-| `--slate-500`    | `#A3A3A3` | Secondary text, metadata, timestamps                                                    |
-| `--slate-200`    | `#27272A` | Borders, dividers — a step lighter than the page background, not darker                 |
-| `--slate-700`    | `#3F3F46` | Rarely used; a slightly stronger border/divider than slate-200 for components that need more separation |
+| `--ink-950`      | `#222222` | Primary text and borders/outlines — near-black, drawn on the light app background      |
+| `--ink-800`      | `#484848` | Secondary dark tone, rarely used directly                                              |
+| `--paper-50`     | `#FFFFFF` | Page background — white, the base the whole app sits on                                |
+| `--paper-100`    | `#F7F7F7` | Elevated surface — cards, panels, image placeholders; one step darker than the page so content reads as "raised" without a shadow |
+| `--brass-500`    | `#FF385C` | Primary accent — Airbnb's "Rausch" coral. CTAs, links, focus ring, selected states      |
+| `--brass-600`    | `#E61E4D` | Accent hover/pressed                                                                    |
+| `--ledger-green` | `#00A699` | Winning / live / success status (a teal-leaning green, distinct from the coral accent so "you're winning" doesn't visually blend into every button on the page) |
+| `--ledger-red`   | `#D93900` | Outbid / error / closes-soon urgency                                                   |
+| `--slate-500`    | `#717171` | Secondary text, metadata, timestamps                                                    |
+| `--slate-200`    | `#EBEBEB` | Borders, dividers — a step darker than the page background, not lighter                 |
+| `--slate-700`    | `#484848` | Rarely used; a slightly stronger border/divider than slate-200 for components that need more separation |
 
 Rules:
 
-- **Text drawn directly on the mint-green accent (or on the status greens/reds) is always dark, never white.** These colors are light/bright enough that white text fails contrast on them — buttons, selected chips, and status pills all use a literal dark neutral (`text-neutral-900`) for their on-fill text, not the `ink-950` token, because `ink-950` is the *page's* text color (light) and would be backwards here. This is the one place "the accent's own text color" and "the page's text color" are different things on purpose.
+- **Text drawn directly on the coral accent (or on the status greens/reds) is always white, never dark.** Coral, the status green, and the status red are all saturated/dark enough that white text passes contrast comfortably — buttons, selected chips, and status pills all use literal `text-white` for their on-fill text. (If the accent or a status color is ever swapped for something pale/pastel, re-check this — a light enough fill color needs dark on-fill text instead, as was true during an earlier mint-green accent pass.)
 - Elevation is tonal, not shadow-based: the page is `paper-50`, anything meant to read as a card/panel/dialog sits on `paper-100`, separated by a thin `slate-200` border. Don't reach for `box-shadow` to separate surfaces.
-- The accent (`brass-500`, mint green) is spent on exactly one thing per screen: the primary action, a link, or a selected/focused state.
-- `ledger-green` (status) and `brass-500` (accent) are intentionally different shades of green — close enough to feel like one coherent palette, distinct enough that a "you're winning" indicator doesn't read as just another button.
-- Modal/overlay scrims are a literal `black/70`, not the `ink-950` token — a scrim needs to stay dark regardless of what the text-color token is doing.
+- The accent (`brass-500`, coral) is spent on exactly one thing per screen: the primary action, a link, or a selected/focused state.
+- `ledger-green` (status) and `brass-500` (accent, coral) are deliberately different hues so a "you're winning" indicator doesn't read as just another button.
+- Modal/overlay scrims are a literal `black/70` — this works regardless of the app's base theme.
 - Red is reserved for bid/auction urgency and errors. Don't reuse it for unrelated UI.
 
 ---
@@ -72,7 +72,7 @@ Type scale (base 16px):
 
 Three tiers only — don't add a fourth without a reason.
 
-- **Primary (Bid actions):** Solid `--brass-500` fill, `--ink-950` text (dark text on the light green — never white), fully pill-shaped (`rounded-full`), bold weight. Pressed state darkens to `--brass-600` and scales to 98%. Reserved exclusively for the primary CTA on any given screen (Place Bid, Confirm Bid, Register) — there is only ever **one** primary button visible at a time.
+- **Primary (Bid actions):** Solid `--brass-500` fill, white text, fully pill-shaped (`rounded-full`), bold weight. Pressed state darkens to `--brass-600` and scales to 98%. Reserved exclusively for the primary CTA on any given screen (Place Bid, Confirm Bid, Register) — there is only ever **one** primary button visible at a time.
 - **Secondary:** 1.5px `--ink-950` outline, transparent fill, pill-shaped. For Watch/Save, Ask a Question, View Details.
 - **Tertiary / text:** No border, `--slate-500` text, underline on hover. For Cancel, Learn more, in-table row actions.
 - All buttons: 44px min height (touch target), no gradients, no shadows on the button itself.

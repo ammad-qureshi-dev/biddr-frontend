@@ -163,7 +163,7 @@ export const auctionApi = {
     put<string>(`/catalog/api/v1/auction/${auctionId}/status/${status}`),
 
   getById: (auctionId: string) =>
-    get<AuctionResponse>(`/catalog/api/v1/auction/${auctionId}`),
+    get<AuctionResponse>(`/catalog/api/v1/auction/view/${auctionId}`),
 
   getItems: (auctionId: string) =>
     get<ItemSummaryResponse[]>(`/catalog/api/v1/auction/${auctionId}/items`),
@@ -211,6 +211,7 @@ export const bidApi = {
   create: (input: {
     auctionId: string;
     itemId: string;
+    itemName: string;
     amount: number;
     expiresAt?: string;
   }) => post<string>("/bidding/api/v1/bid", input),
@@ -220,6 +221,7 @@ export const bidApi = {
     input: {
       auctionId: string;
       itemId: string;
+      itemName: string;
       amount: number;
       expiresAt?: string;
     },
@@ -228,8 +230,8 @@ export const bidApi = {
   accept: (bidId: string) =>
     post<boolean>(`/bidding/api/v1/bid/accept/${bidId}`),
 
-  reject: (bidId: string, rejectReason: string) =>
-    post<boolean>(`/bidding/api/v1/bid/reject/${bidId}`, { rejectReason }),
+  reject: (bidId: string, itemName: string, rejectReason: string) =>
+    post<boolean>(`/bidding/api/v1/bid/reject/${bidId}`, { itemName, rejectReason }),
 
   searchByIds: (bidIds: string[]) => {
     const qs = bidIds.map((id) => `bidIds=${encodeURIComponent(id)}`).join("&");

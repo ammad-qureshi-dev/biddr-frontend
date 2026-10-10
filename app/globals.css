@@ -2,22 +2,21 @@
 
 @theme {
   /* Token names are historical ("ink"/"paper"/"brass"/"ledger") from earlier visual
-     directions — kept so component code didn't need renaming, but the values below are
-     the current palette: a single dark theme (no light mode, no toggle). "paper" is now
-     the dark app background/surface, "ink" is the light text/border color drawn on top of
-     it — inverted from what the names suggest, kept for the same reason as always: not
-     renaming every token every time the palette changes. Supabase-style mint-green accent. */
-  --color-ink-950: #fafafa;
-  --color-ink-800: #d4d4d4;
-  --color-paper-50: #0a0a0a;
-  --color-paper-100: #18181b;
-  --color-brass-500: #3ecf8e;
-  --color-brass-600: #2fb579;
-  --color-ledger-green: #22c55e;
-  --color-ledger-red: #ef4444;
-  --color-slate-500: #a3a3a3;
-  --color-slate-200: #27272a;
-  --color-slate-700: #3f3f46;
+     directions — kept so component code didn't need renaming even as the values cycled.
+     Current palette: light Airbnb-style app, single theme (no dark mode, no toggle).
+     "paper" is the light app background/surface, "ink" is the near-black text/border
+     color drawn on top of it. Coral accent. */
+  --color-ink-950: #222222;
+  --color-ink-800: #484848;
+  --color-paper-50: #ffffff;
+  --color-paper-100: #f7f7f7;
+  --color-brass-500: #ff385c;
+  --color-brass-600: #e61e4d;
+  --color-ledger-green: #00a699;
+  --color-ledger-red: #d93900;
+  --color-slate-500: #717171;
+  --color-slate-200: #ebebeb;
+  --color-slate-700: #484848;
 
   --font-display: var(--font-sans);
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
@@ -81,7 +80,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -98,7 +97,7 @@ body {
 
 ::selection {
   background: var(--color-brass-500);
-  color: #0a0a0a;
+  color: #ffffff;
 }
 
 :focus-visible {

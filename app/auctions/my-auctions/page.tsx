@@ -75,7 +75,7 @@ export default function MyAuctionsPage() {
         <h1 className="font-display text-3xl font-semibold text-ink-950">My Auctions</h1>
         <Link
           href="/auctions/create"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brass-500 px-5 font-sans text-sm font-semibold text-neutral-900 hover:bg-brass-600"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brass-500 px-5 font-sans text-sm font-semibold text-white hover:bg-brass-600"
         >
           <Plus className="h-4 w-4" />
           Create Auction

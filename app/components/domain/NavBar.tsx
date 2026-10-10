@@ -61,7 +61,7 @@ export function NavBar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brass-500 px-4 font-sans text-sm font-semibold text-neutral-900 hover:bg-brass-600"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brass-500 px-4 font-sans text-sm font-semibold text-white hover:bg-brass-600"
                 >
                   <UserPlus className="h-4 w-4" />
                   Register

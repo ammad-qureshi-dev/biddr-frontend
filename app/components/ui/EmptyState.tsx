@@ -20,7 +20,7 @@ export function EmptyState({
       <p className="max-w-sm font-sans text-sm text-slate-500">{body}</p>
       {actionLabel && actionHref && (
         <Link href={actionHref} className="mt-2">
-          <span className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-brass-500 px-5 font-sans text-sm font-semibold text-neutral-900 hover:bg-brass-600">
+          <span className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-brass-500 px-5 font-sans text-sm font-semibold text-white hover:bg-brass-600">
             <Icon className="h-4 w-4" />
             {actionLabel}
           </span>

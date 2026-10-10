@@ -29,7 +29,7 @@ export function CategoryPicker({
               aria-pressed={active}
               className={`min-h-9 rounded-full border px-3 font-sans text-xs font-medium transition-colors ${
                 active
-                  ? "border-brass-500 bg-brass-500 text-neutral-900"
+                  ? "border-brass-500 bg-brass-500 text-white"
                   : "border-slate-200 bg-paper-100 text-ink-950 hover:border-brass-500"
               }`}
             >

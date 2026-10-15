@@ -11,35 +11,48 @@ One variable, read in `lib/config.ts`:
 
 | Variable                   | Purpose                                       | Local                   | Production                  |
 | -------------------------- | --------------------------------------------- | ----------------------- | --------------------------- |
-| `NEXT_PUBLIC_API_BASE_URL` | API gateway base URL, no trailing slash       | `http://localhost:8080` | e.g. `https://api.your-domain.com` |
+| `NEXT_PUBLIC_API_BASE_URL` | API gateway base URL, no trailing slash       | `https://bidder-api-gateway.onrender.com` | `https://bidder-api-gateway.onrender.com` |
 
 `NEXT_PUBLIC_*` values are **inlined into the browser bundle at build time**. Changing the
 API URL means rebuilding, and one build or image serves exactly one API URL.
 
 | File                     | Committed | Used by                                                       |
 | ------------------------ | --------- | ------------------------------------------------------------- |
-| `.env.development`       | yes       | `npm run dev`; points at `http://localhost:8080`               |
-| `.env.production`        | yes       | `npm run build`; intentionally has no URL (see below)          |
+| `.env.development`       | yes       | `npm run dev`; points at the deployed gateway                  |
+| `.env.production`        | yes       | `npm run build`; points at the deployed gateway                |
 | `.env.example`           | yes       | Reference for every variable                                  |
 | `.env*.local`, `.env`    | no        | Per-machine overrides and anything secret                     |
 
-A production build fails immediately with a clear error if `NEXT_PUBLIC_API_BASE_URL` isn't set,
-so a bundle pointing at nothing (or at localhost) can't ship by accident.
+A build-time `NEXT_PUBLIC_API_BASE_URL` (CI, `--build-arg`, `.env.production.local`) overrides
+`.env.production`. A production build fails with a clear error if the variable ends up unset.
+
+Deployed services (Render):
+
+| Service              | URL                                                      |
+| -------------------- | -------------------------------------------------------- |
+| Client               | https://biddr-frontend.onrender.com                      |
+| API gateway          | https://bidder-api-gateway.onrender.com                  |
+| Identity & auth      | https://bidder-identity-and-auth-service.onrender.com    |
+| Catalog              | https://bidder-catalog-service.onrender.com              |
+| Bidding              | https://bidding-service-wahv.onrender.com                |
+| Notification         | https://bidder-notification-service.onrender.com         |
+
+The frontend only calls the gateway; the other URLs are for reference.
 
 ## Local development
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000 → API at http://localhost:8080
+npm run dev          # http://localhost:3000 → API at https://bidder-api-gateway.onrender.com
 ```
 
-Start the backend first (gateway on `:8080`). The gateway's CORS allows exactly one origin
-(`client.url`, `http://localhost:3000` in its local profile), so run the frontend on port 3000.
-
-To point at a different API locally, create `.env.development.local`:
+The gateway's CORS allows exactly one origin (`client.url`), so the deployed gateway only accepts
+`http://localhost:3000` if that's included in its config. To run against a local backend instead
+(gateway on `:8080`, `client.url` = `http://localhost:3000` in its local profile), create
+`.env.development.local`:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://192.168.1.20:8080
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
 Other scripts: `npm run lint`, `npm run typecheck`.

@@ -8,6 +8,20 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
+// The browser calls the API through this app at /api/*, and Next proxies it to the gateway.
+// Keeping the gateway same-origin makes the auth cookie first-party: frontend and gateway live on
+// different onrender.com subdomains, which browsers treat as separate sites (third-party cookies).
+// Rewrites are fixed at build time, so the gateway URL is a build-time variable.
+const apiGatewayUrl = (process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL)?.replace(/\/+$/, "");
+
+if (!apiGatewayUrl) {
+  throw new Error(
+    "API_GATEWAY_URL is not set. Local dev reads it from .env.development; production builds " +
+      "need it in the build environment (CI variable, Docker build arg, or .env.production.local). " +
+      "See .env.example.",
+  );
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
@@ -24,6 +38,10 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: `${apiGatewayUrl}/:path*` }];
   },
 };
 

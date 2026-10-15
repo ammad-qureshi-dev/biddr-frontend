@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 # Production image for the Bidder frontend (Next.js standalone output).
 #
-#   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t bidder-frontend .
+#   docker build --build-arg API_GATEWAY_URL=https://api.example.com -t bidder-frontend .
 #   docker run -p 3000:3000 bidder-frontend
 #
-# NEXT_PUBLIC_API_BASE_URL is baked into the browser bundle during the build, so each
-# environment with a different API URL needs its own image.
+# The browser calls /api/* on this app and Next proxies it to API_GATEWAY_URL. The rewrite is
+# baked in during the build, so each environment with a different gateway needs its own image.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -15,8 +15,8 @@ RUN npm ci
 
 FROM node:22-alpine AS build
 WORKDIR /app
-ARG NEXT_PUBLIC_API_BASE_URL=https://bidder-api-gateway.onrender.com
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+ARG API_GATEWAY_URL=https://bidder-api-gateway.onrender.com
+ENV API_GATEWAY_URL=$API_GATEWAY_URL \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

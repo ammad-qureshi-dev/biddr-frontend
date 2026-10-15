@@ -7,14 +7,17 @@ Requires Node.js 20.9+.
 
 ## Configuration
 
-One variable, read in `lib/config.ts`:
+One variable, read in `next.config.ts`:
 
 | Variable                   | Purpose                                       | Local                   | Production                  |
 | -------------------------- | --------------------------------------------- | ----------------------- | --------------------------- |
-| `NEXT_PUBLIC_API_BASE_URL` | API gateway base URL, no trailing slash       | `https://bidder-api-gateway.onrender.com` | `https://bidder-api-gateway.onrender.com` |
+| `API_GATEWAY_URL` | API gateway base URL (proxied at /api), no trailing slash | `https://bidder-api-gateway.onrender.com` | `https://bidder-api-gateway.onrender.com` |
 
-`NEXT_PUBLIC_*` values are **inlined into the browser bundle at build time**. Changing the
-API URL means rebuilding, and one build or image serves exactly one API URL.
+The browser never calls the gateway directly: it calls `/api/*` on the frontend's own origin and
+Next proxies those requests to `API_GATEWAY_URL`. That keeps the auth cookie first-party (the
+frontend and gateway are on different `onrender.com` subdomains, which browsers treat as separate
+sites). The rewrite is **fixed at build time**, so changing the URL means rebuilding, and one
+build or image serves exactly one gateway.
 
 | File                     | Committed | Used by                                                       |
 | ------------------------ | --------- | ------------------------------------------------------------- |
@@ -23,7 +26,7 @@ API URL means rebuilding, and one build or image serves exactly one API URL.
 | `.env.example`           | yes       | Reference for every variable                                  |
 | `.env*.local`, `.env`    | no        | Per-machine overrides and anything secret                     |
 
-A build-time `NEXT_PUBLIC_API_BASE_URL` (CI, `--build-arg`, `.env.production.local`) overrides
+A build-time `API_GATEWAY_URL` (CI, `--build-arg`, `.env.production.local`) overrides
 `.env.production`. A production build fails with a clear error if the variable ends up unset.
 
 Deployed services (Render):
@@ -52,7 +55,7 @@ The gateway's CORS allows exactly one origin (`client.url`), so the deployed gat
 `.env.development.local`:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+API_GATEWAY_URL=http://localhost:8080
 ```
 
 Other scripts: `npm run lint`, `npm run typecheck`.
@@ -62,14 +65,14 @@ Other scripts: `npm run lint`, `npm run typecheck`.
 ### Node server
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com npm run build
+API_GATEWAY_URL=https://api.your-domain.com npm run build
 npm start            # or: node .next/standalone/server.js (copy .next/static and public in first)
 ```
 
 ### Docker
 
 ```bash
-docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com -t bidder-frontend .
+docker build --build-arg API_GATEWAY_URL=https://api.your-domain.com -t bidder-frontend .
 docker run -p 3000:3000 bidder-frontend
 ```
 
@@ -78,7 +81,7 @@ The image uses Next's standalone output, runs as a non-root user, and listens on
 
 ### Hosting platforms (Vercel etc.)
 
-Set `NEXT_PUBLIC_API_BASE_URL` as a **build-time** environment variable in the project settings.
+Set `API_GATEWAY_URL` as a **build-time** environment variable in the project settings.
 
 ## Backend settings that must match production
 

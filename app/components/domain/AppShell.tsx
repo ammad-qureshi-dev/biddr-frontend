@@ -20,13 +20,21 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { toggleTheme } from "@/lib/theme";
 import { loginHref } from "@/lib/next-url";
+import { NOTIFICATIONS_DISABLED_TITLE, NOTIFICATIONS_ENABLED } from "@/lib/features";
 import { Avatar } from "../ui/Avatar";
 import { LinkButton } from "../ui/Button";
 
 /** Routes that render as a centered card on the canvas, without sidebar or top bar. */
 const BARE_ROUTES = ["/login", "/register", "/password/reset", "/verify-account"];
 
-type NavItem = { href: string; label: string; icon: LucideIcon; match: (p: string) => boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  match: (p: string) => boolean;
+  /** Shown greyed out with this tooltip instead of a link. */
+  disabledTitle?: string;
+};
 
 const BROWSE: NavItem = {
   href: "/",
@@ -50,6 +58,7 @@ const WORKSPACE: NavItem[] = [
     label: "Notifications",
     icon: Bell,
     match: (p) => p.startsWith("/notifications"),
+    disabledTitle: NOTIFICATIONS_ENABLED ? undefined : NOTIFICATIONS_DISABLED_TITLE,
   },
   { href: "/account", label: "Account", icon: UserRound, match: (p) => p.startsWith("/account") },
 ];
@@ -85,6 +94,14 @@ const navItemClass = (active: boolean) =>
 function NavLink({ item, pathname, onNavigate }: { item: NavItem; pathname: string; onNavigate?: () => void }) {
   const active = item.match(pathname);
   const Icon = item.icon;
+  if (item.disabledTitle) {
+    return (
+      <span aria-disabled="true" title={item.disabledTitle} className={`${navItemClass(false)} cursor-not-allowed opacity-50 hover:text-fg/80`}>
+        <Icon className="h-[18px] w-[18px] text-muted" strokeWidth={1.75} />
+        {item.label}
+      </span>
+    );
+  }
   return (
     <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={navItemClass(active)}>
       <Icon className="h-[18px] w-[18px] text-muted" strokeWidth={1.75} />
@@ -229,13 +246,25 @@ function TopBar({ pathname, onOpenMenu }: { pathname: string; onOpenMenu: () => 
         <ThemeToggle />
         {loading ? null : user ? (
           <>
-            <Link
-              href="/notifications"
-              aria-label="Notifications"
-              className={`${iconButtonClass} ${pathname.startsWith("/notifications") ? "bg-subtle" : ""}`}
-            >
-              <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
-            </Link>
+            {NOTIFICATIONS_ENABLED ? (
+              <Link
+                href="/notifications"
+                aria-label="Notifications"
+                className={`${iconButtonClass} ${pathname.startsWith("/notifications") ? "bg-subtle" : ""}`}
+              >
+                <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                aria-label={`Notifications (${NOTIFICATIONS_DISABLED_TITLE.toLowerCase()})`}
+                title={NOTIFICATIONS_DISABLED_TITLE}
+                className={`${iconButtonClass} cursor-not-allowed opacity-50 hover:bg-transparent`}
+              >
+                <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              </button>
+            )}
             <Link href="/account" aria-label="Account" className="ml-1 rounded-full">
               <Avatar name={user.fullName} />
             </Link>

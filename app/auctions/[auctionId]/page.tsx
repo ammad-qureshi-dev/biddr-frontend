@@ -60,8 +60,9 @@ export default function AuctionDetailPage() {
   const [confirmClose, setConfirmClose] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(() => {
-    auctionApi.getById(auctionId).then(setAuction).catch(() => setNotFound(true));
+  // Only the first load counts as a view; the refresh after a status change doesn't.
+  const load = useCallback((countView = false) => {
+    (countView ? auctionApi.view : auctionApi.getById)(auctionId).then(setAuction).catch(() => setNotFound(true));
     auctionApi
       .getItems(auctionId)
       .then((fetched) => {
@@ -72,7 +73,7 @@ export default function AuctionDetailPage() {
   }, [auctionId]);
 
   useEffect(() => {
-    load();
+    load(true);
   }, [load]);
 
   if (notFound) {

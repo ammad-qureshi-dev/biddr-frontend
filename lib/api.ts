@@ -1,4 +1,4 @@
-import { API_BASE_URL as GATEWAY_URL } from "./config";
+import { API_BASE_URL } from "./config";
 import type {
   ApiResponse,
   AppUser,
@@ -31,7 +31,7 @@ async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<ApiResponse<T>> {
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: "include",
     headers: {
@@ -48,7 +48,7 @@ async function request<T>(
         .map((m) => m.content)
         .filter((c): c is string => !!c);
     } catch {
-      // gateway-level 401s return an empty body
+      // security-filter 401s (before a controller runs) return an empty body
     }
     throw new ApiError(res.status, messages.length ? messages : ["Please sign in to continue."]);
   }
@@ -160,8 +160,13 @@ export const auctionApi = {
   updateStatus: (auctionId: string, status: AuctionStatus) =>
     put<string>(`/catalog/api/v1/auction/${auctionId}/status/${status}`),
 
-  getById: (auctionId: string) =>
+  /** Records a view (unless the caller owns the auction). Only for someone opening the auction page. */
+  view: (auctionId: string) =>
     get<AuctionResponse>(`/catalog/api/v1/auction/view/${auctionId}`),
+
+  /** Same data as `view`, without counting a view. */
+  getById: (auctionId: string) =>
+    get<AuctionResponse>(`/catalog/api/v1/auction/${auctionId}/details`),
 
   getItems: (auctionId: string) =>
     get<ItemSummaryResponse[]>(`/catalog/api/v1/auction/${auctionId}/items`),
@@ -199,8 +204,13 @@ export const auctionApi = {
 };
 
 export const itemApi = {
+  /** Records a view (unless the caller owns the auction). Only for someone opening the item page. */
+  view: (itemId: string) =>
+    get<ItemResponse>(`/catalog/api/v1/item/view/${itemId}`),
+
+  /** Same data as `view`, without counting a view. */
   getById: (itemId: string) =>
-    get<ItemResponse>(`/catalog/api/v1/item/${itemId}`),
+    get<ItemResponse>(`/catalog/api/v1/item/${itemId}/details`),
 };
 
 // -- bidding ----------------------------------------------------------------

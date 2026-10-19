@@ -8,15 +8,21 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
-// The browser calls the API through this app at /api/*, and Next proxies it to the gateway.
-// Keeping the gateway same-origin makes the auth cookie first-party: frontend and gateway live on
-// different onrender.com subdomains, which browsers treat as separate sites (third-party cookies).
-// Rewrites are fixed at build time, so the gateway URL is a build-time variable.
-const apiGatewayUrl = (process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL)?.replace(/\/+$/, "");
+// The browser calls the API through this app at /api/*, and Next proxies it to the backend
+// monolith. Keeping the backend same-origin makes the auth cookie first-party: frontend and backend
+// live on different onrender.com subdomains, which browsers treat as separate sites (third-party
+// cookies). Rewrites are fixed at build time, so the backend URL is a build-time variable.
+// API_GATEWAY_URL / NEXT_PUBLIC_API_BASE_URL are the pre-monolith names, kept so existing deploy
+// settings keep working.
+const apiUrl = (
+  process.env.API_URL ??
+  process.env.API_GATEWAY_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL
+)?.replace(/\/+$/, "");
 
-if (!apiGatewayUrl) {
+if (!apiUrl) {
   throw new Error(
-    "API_GATEWAY_URL is not set. Local dev reads it from .env.development; production builds " +
+    "API_URL is not set. Local dev reads it from .env.development; production builds " +
       "need it in the build environment (CI variable, Docker build arg, or .env.production.local). " +
       "See .env.example.",
   );
@@ -41,7 +47,7 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${apiGatewayUrl}/:path*` }];
+    return [{ source: "/api/:path*", destination: `${apiUrl}/:path*` }];
   },
 };
 

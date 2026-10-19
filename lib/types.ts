@@ -87,6 +87,9 @@ export type ItemResponse = {
   priceSoldAt: number | null;
   highestBidId: string | null;
   highestBidAmount: number | null;
+  acceptingBids: boolean;
+  /** Incremented by `itemApi.view` (not `getById`), except when the auction owner views it. */
+  viewCount: number;
 };
 
 export type ItemSummaryResponse = {

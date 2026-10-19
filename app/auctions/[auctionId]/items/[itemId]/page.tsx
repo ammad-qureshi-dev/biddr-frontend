@@ -35,15 +35,17 @@ export default function ItemDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(() => {
+  // Only the first load counts as a view of the item; refreshes after a bid/accept/reject don't.
+  // The auction is fetched for the header, which isn't a view of the auction page.
+  const load = useCallback((countView = false) => {
     auctionApi.getById(auctionId).then(setAuction).catch(() => setNotFound(true));
-    itemApi.getById(itemId).then(setItem).catch(() => setNotFound(true));
+    (countView ? itemApi.view : itemApi.getById)(itemId).then(setItem).catch(() => setNotFound(true));
     bidApi.getTopTenForItem(itemId).then(setBids).catch(() => setBids([]));
     rememberItemAuction(itemId, auctionId);
   }, [auctionId, itemId]);
 
   useEffect(() => {
-    load();
+    load(true);
   }, [load]);
 
   const isLive = auction?.auctionStatus === "LIVE";

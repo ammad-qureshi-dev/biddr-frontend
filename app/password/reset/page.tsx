@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Send, KeyRound, LogIn, ArrowLeft } from "lucide-react";
 import { authApi, ApiError } from "@/lib/api";
 import { Input } from "../../components/ui/Input";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 import { Button, LinkButton } from "../../components/ui/Button";
 
 function RequestLinkForm() {
@@ -86,10 +87,9 @@ function SetNewPasswordForm({ token }: { token: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-      <Input
+      <PasswordInput
         id="password"
         label="New password"
-        type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         hint="8+ characters, with an uppercase letter, lowercase letter, number, and special character."

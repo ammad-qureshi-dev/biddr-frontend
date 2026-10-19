@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { safeNextPath } from "@/lib/next-url";
 import { Input } from "../components/ui/Input";
+import { PasswordInput } from "../components/ui/PasswordInput";
 import { Button } from "../components/ui/Button";
 
 function LoginForm() {
@@ -53,10 +54,9 @@ function LoginForm() {
           required
         />
         <div className="flex flex-col gap-1.5">
-          <Input
+          <PasswordInput
             id="password"
             label="Password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

@@ -8,6 +8,7 @@ import { useToast } from "@/lib/toast-context";
 import { appUserApi, authApi, ApiError } from "@/lib/api";
 import type { ContactType, PreferredContactMethod } from "@/lib/types";
 import { loginHref } from "@/lib/next-url";
+import { NOTIFICATIONS_DISABLED_TITLE, NOTIFICATIONS_ENABLED } from "@/lib/features";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
@@ -152,9 +153,17 @@ export default function AccountPage() {
             <MailCheck className="h-4 w-4 shrink-0 text-muted" />
             <span>Verify your account — we&apos;ll email a link to your registered address.</span>
           </div>
-          <Button icon={MailCheck} size="sm" onClick={handleSendVerification} disabled={busy}>
-            Send verification link
-          </Button>
+          {/* Wrapper carries the tooltip: disabled buttons don't reliably show one. */}
+          <span title={NOTIFICATIONS_ENABLED ? undefined : NOTIFICATIONS_DISABLED_TITLE}>
+            <Button
+              icon={MailCheck}
+              size="sm"
+              onClick={handleSendVerification}
+              disabled={busy || !NOTIFICATIONS_ENABLED}
+            >
+              Send verification link
+            </Button>
+          </span>
         </Card>
       )}
 

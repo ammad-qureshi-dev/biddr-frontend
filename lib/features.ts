@@ -3,7 +3,7 @@
  * can't be opened, and its route redirects home.
  */
 
-/** Notifications inbox. Off until notification-service works with the monolith deployment. */
+/** Notifications inbox and anything that sends one (e.g. the account verification link). Off while notification-service is down. */
 export const NOTIFICATIONS_ENABLED = false;
 
 export const NOTIFICATIONS_DISABLED_TITLE = "Notifications are unavailable right now";
